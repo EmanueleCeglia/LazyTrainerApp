@@ -1,0 +1,27 @@
+version: '3.9'
+services:
+  backend:
+    build: .
+    container_name: fastapi_container
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}  # se devi usare GPT
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/mydb
+    depends_on:
+      - db
+
+  db:
+    image: postgres:14
+    container_name: postgres_container
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

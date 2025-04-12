@@ -1,0 +1,16 @@
+# FastAPI e server
+fastapi==0.115.12
+uvicorn==0.34.0
+
+# Integrazione con OpenAI (ChatGPT)
+openai==1.72.0
+
+# Interazione con DB relazionale (SQLAlchemy) + driver PostgreSQL
+SQLAlchemy==2.0.40
+psycopg2-binary==2.9.10
+
+# Lettura di file .env (chiavi, variabili d'ambiente, ecc.)
+python-dotenv==1.1.0
+
+# Libreria utile per fare richieste HTTP in generale (opzionale)
+requests==2.32.3
