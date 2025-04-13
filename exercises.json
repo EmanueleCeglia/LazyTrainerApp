@@ -1,0 +1,183 @@
+[
+    {
+        "name": "Flat Bench Press",
+        "type": "compound",
+        "subcategory": "horizontal push",
+        "equipment": [
+            "barbell",
+            "dumbbells",
+            "machine"
+        ]
+    },
+    {
+        "name": "Incline Bench Press",
+        "type": "compound",
+        "subcategory": "horizontal push",
+        "equipment": [
+            "barbell",
+            "dumbbells",
+            "machine"
+        ]
+    },
+    {
+        "name": "Parallel Bar Dips",
+        "type": "compound",
+        "subcategory": "horizontal push",
+        "equipment": [
+            "bars",
+            "bodyweight",
+            "weighted"
+        ]
+    },
+    {
+        "name": "Chest Fly on Bench",
+        "type": "compound",
+        "subcategory": "horizontal push",
+        "equipment": [
+            "dumbbells",
+            "machine"
+        ]
+    },
+    {
+        "name": "Push-Ups",
+        "type": "compound",
+        "subcategory": "horizontal push",
+        "equipment": [
+            "bodyweight",
+            "weighted"
+        ]
+    },
+    {
+        "name": "Military Press",
+        "type": "compound",
+        "subcategory": "vertical push",
+        "equipment": [
+            "barbell",
+            "dumbbells"
+        ]
+    },
+    {
+        "name": "Arnold Press",
+        "type": "compound",
+        "subcategory": "vertical push",
+        "equipment": [
+            "dumbbells"
+        ]
+    },
+    {
+        "name": "Bent-Over Row",
+        "type": "compound",
+        "subcategory": "horizontal pull",
+        "equipment": [
+            "barbell",
+            "dumbbells",
+            "machine"
+        ]
+    },
+    {
+        "name": "Cable Row (Pulley)",
+        "type": "compound",
+        "subcategory": "horizontal pull",
+        "equipment": [
+            "machine",
+            "cable"
+        ]
+    },
+    {
+        "name": "Pull-Ups",
+        "type": "compound",
+        "subcategory": "vertical pull",
+        "equipment": [
+            "bodyweight",
+            "assisted",
+            "weighted"
+        ]
+    },
+    {
+        "name": "Lat Pulldown",
+        "type": "compound",
+        "subcategory": "vertical pull",
+        "equipment": [
+            "machine"
+        ]
+    },
+    {
+        "name": "Squat",
+        "type": "compound",
+        "subcategory": "legs anterior kinetic chain",
+        "equipment": [
+            "barbell",
+            "bodyweight",
+            "smith machine"
+        ]
+    },
+    {
+        "name": "Deadlift",
+        "type": "compound",
+        "subcategory": "legs posterior kinetic chain",
+        "equipment": [
+            "barbell"
+        ]
+    },
+    {
+        "name": "Hip Thrust",
+        "type": "compound",
+        "subcategory": "legs posterior kinetic chain",
+        "equipment": [
+            "barbell",
+            "machine"
+        ]
+    },
+    {
+        "name": "Barbell Curl",
+        "type": "isolation",
+        "subcategory": "biceps",
+        "equipment": [
+            "barbell"
+        ]
+    },
+    {
+        "name": "Cable Pushdown",
+        "type": "isolation",
+        "subcategory": "triceps",
+        "equipment": [
+            "cables"
+        ]
+    },
+    {
+        "name": "Lateral Raises",
+        "type": "isolation",
+        "subcategory": "shoulders",
+        "equipment": [
+            "dumbbells",
+            "cables"
+        ]
+    },
+    {
+        "name": "Leg Extension",
+        "type": "isolation",
+        "subcategory": "quadriceps",
+        "equipment": [
+            "machine"
+        ]
+    },
+    {
+        "name": "Leg Curl",
+        "type": "isolation",
+        "subcategory": "hamstrings",
+        "equipment": [
+            "machine"
+        ]
+    },
+    {
+        "name": "Calf Raise",
+        "type": "isolation",
+        "subcategory": "calves",
+        "equipment": [
+            "dumbbells",
+            "barbell",
+            "machine",
+            "bodyweight"
+        ]
+    }
+]
