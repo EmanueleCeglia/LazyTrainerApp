@@ -2,6 +2,7 @@
     {
         "name": "Flat Bench Press",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "horizontal push",
         "equipment": [
             "barbell",
@@ -12,6 +13,7 @@
     {
         "name": "Incline Bench Press",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "horizontal push",
         "equipment": [
             "barbell",
@@ -22,6 +24,7 @@
     {
         "name": "Parallel Bar Dips",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "horizontal push",
         "equipment": [
             "bars",
@@ -32,6 +35,7 @@
     {
         "name": "Chest Fly on Bench",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "horizontal push",
         "equipment": [
             "dumbbells",
@@ -41,6 +45,7 @@
     {
         "name": "Push-Ups",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "horizontal push",
         "equipment": [
             "bodyweight",
@@ -50,6 +55,7 @@
     {
         "name": "Military Press",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "vertical push",
         "equipment": [
             "barbell",
@@ -59,6 +65,7 @@
     {
         "name": "Arnold Press",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "vertical push",
         "equipment": [
             "dumbbells"
@@ -67,6 +74,7 @@
     {
         "name": "Bent-Over Row",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "horizontal pull",
         "equipment": [
             "barbell",
@@ -77,6 +85,7 @@
     {
         "name": "Cable Row (Pulley)",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "horizontal pull",
         "equipment": [
             "machine",
@@ -86,6 +95,7 @@
     {
         "name": "Pull-Ups",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "vertical pull",
         "equipment": [
             "bodyweight",
@@ -96,6 +106,7 @@
     {
         "name": "Lat Pulldown",
         "type": "compound",
+        "category": "upper body",
         "subcategory": "vertical pull",
         "equipment": [
             "machine"
@@ -104,6 +115,7 @@
     {
         "name": "Squat",
         "type": "compound",
+        "category": "lower body",
         "subcategory": "legs anterior kinetic chain",
         "equipment": [
             "barbell",
@@ -114,6 +126,7 @@
     {
         "name": "Deadlift",
         "type": "compound",
+        "category": "lower body",
         "subcategory": "legs posterior kinetic chain",
         "equipment": [
             "barbell"
@@ -122,6 +135,7 @@
     {
         "name": "Hip Thrust",
         "type": "compound",
+        "category": "lower body",
         "subcategory": "legs posterior kinetic chain",
         "equipment": [
             "barbell",
@@ -131,6 +145,7 @@
     {
         "name": "Barbell Curl",
         "type": "isolation",
+        "category": "lower body",
         "subcategory": "biceps",
         "equipment": [
             "barbell"
@@ -139,6 +154,7 @@
     {
         "name": "Cable Pushdown",
         "type": "isolation",
+        "category": "lower body",
         "subcategory": "triceps",
         "equipment": [
             "cables"
@@ -147,6 +163,7 @@
     {
         "name": "Lateral Raises",
         "type": "isolation",
+        "category": "lower body",
         "subcategory": "shoulders",
         "equipment": [
             "dumbbells",
@@ -156,6 +173,7 @@
     {
         "name": "Leg Extension",
         "type": "isolation",
+        "category": "lower body",
         "subcategory": "quadriceps",
         "equipment": [
             "machine"
@@ -164,6 +182,7 @@
     {
         "name": "Leg Curl",
         "type": "isolation",
+        "category": "lower body",
         "subcategory": "hamstrings",
         "equipment": [
             "machine"
@@ -172,6 +191,7 @@
     {
         "name": "Calf Raise",
         "type": "isolation",
+        "category": "lower body",
         "subcategory": "calves",
         "equipment": [
             "dumbbells",
