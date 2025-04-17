@@ -40,7 +40,7 @@ alembic/
 
 ```env
 POSTGRES_USER=EmanueleCeglia
-POSTGRES_PASSWORD=Pythonista99
+POSTGRES_PASSWORD=xxxxxxxx
 POSTGRES_DB=LazyTrainer_db
 # opzionale: POSTGRES_HOST=localhost (default)
 # non serve DATABASE_URL – viene costruito al volo da app/db.py
