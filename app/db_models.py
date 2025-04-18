@@ -1,61 +1,125 @@
-"""
-SQLAlchemy models for LazyTrainer.
-Type‑hints follow the SQLAlchemy 2.0 'Mapped' style.
-"""
-
-from typing import List
-from sqlalchemy import String, Enum, ForeignKey
+from sqlalchemy import String, Enum, ForeignKey, Integer
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
     relationship,
     declarative_base,
 )
+from sqlalchemy.ext.associationproxy import association_proxy
 
 Base = declarative_base()
 
+class ExerciseMuscle(Base):
+    __tablename__ = "exercise_muscles"
 
-class Muscle(Base):
-    __tablename__ = "muscles"
+    exercise_id: Mapped[int] = mapped_column(
+        Integer,
+        # exercises è esattamente il nome della __tablename__ = "exercises"
+        ForeignKey("exercises.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    muscle_id:  Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("muscles.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    role:       Mapped[str | None] = mapped_column(
+        Enum("primary", "secondary", name="role_enum"),
+        nullable=True,
+    )
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    # relationship verso i due lati
+    exercise: Mapped["Exercise"] = relationship(
+        "Exercise",
+        back_populates="muscle_associations",
+    )
+    muscle:   Mapped["Muscle"]   = relationship(
+        "Muscle",
+        back_populates="exercise_associations",
+    )
 
-    exercises: Mapped[List["Exercise"]] = relationship(
-        secondary="exercise_muscles",
-        back_populates="muscles",
+
+class ExerciseEquipment(Base):
+    __tablename__ = "exercise_equipment"
+
+    exercise_id: Mapped[int] = mapped_column(
+        Integer,
+        # exercises è esattamente il nome della __tablename__ = "exercises"
+        ForeignKey("exercises.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    equipment_id:  Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("equipment.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    role:       Mapped[str | None] = mapped_column(
+        Enum("primary", "secondary", name="role_enum"),
+        nullable=True,
+    )
+
+    # relationship verso i due lati
+    exercise: Mapped["Exercise"] = relationship(
+        "Exercise",
+        back_populates="equipment_associations",
+    )
+    equipment:   Mapped["Equipment"]   = relationship(
+        "Equipment",
+        back_populates="exercise_associations",
     )
 
 
 class Exercise(Base):
     __tablename__ = "exercises"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
-    description: Mapped[str | None] = mapped_column(String, nullable=True)
-    equipment: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    difficulty: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    calories_burned: Mapped[int | None] = mapped_column(nullable=True)
+    id:               Mapped[int]    = mapped_column(Integer, primary_key=True)
+    name:             Mapped[str]    = mapped_column(String(100), unique=True, nullable=False)
+    exercise_type:    Mapped[str]    = mapped_column(String(100), nullable=False) # compund, single
+    body_region:      Mapped[str]    = mapped_column(String(100), nullable=False) # upper body, lower body
+    movement_pattern: Mapped[str]    = mapped_column(String(100), nullable=False) # v/h push/pull, legs
 
-
-    muscles: Mapped[List[Muscle]] = relationship(
-        secondary="exercise_muscles",
-        back_populates="exercises",
+    # 1) relazioni verso l’associazione
+    muscle_associations: Mapped[list[ExerciseMuscle]] = relationship(
+        "ExerciseMuscle",
+        back_populates="exercise",
+        cascade="all, delete-orphan"
+    )
+    # 2) proxy per arrivare direttamente ai Muscle
+    muscles: Mapped[list["Muscle"]] = association_proxy(
+        "muscle_associations",
+        "muscle",
     )
 
 
-class ExerciseMuscle(Base):
-    __tablename__ = "exercise_muscles"
+class Muscle(Base):
+    __tablename__ = "muscles"
 
-    exercise_id: Mapped[int] = mapped_column(
-        ForeignKey("exercises.id", ondelete="CASCADE"),
-        primary_key=True,
+    id:   Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+
+    exercise_associations: Mapped[list[ExerciseMuscle]] = relationship(
+        "ExerciseMuscle",
+        back_populates="muscle",
+        cascade="all, delete-orphan"
     )
-    muscle_id: Mapped[int] = mapped_column(
-        ForeignKey("muscles.id", ondelete="CASCADE"),
-        primary_key=True,
+    exercises: Mapped[list[Exercise]] = association_proxy(
+        "exercise_associations",
+        "exercise",
     )
-    role: Mapped[str | None] = mapped_column(
-        Enum("primary", "secondary", name="role_enum"),
-        nullable=True,
+
+
+class Equipment(Base):
+    __tablename__ = "equipment"
+
+    id:   Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+
+    exercise_associations: Mapped[list[ExerciseEquipment]] = relationship(
+        "ExerciseEquipment",
+        back_populates="equipment",
+        cascade="all, delete-orphan"
+    )
+    exercises: Mapped[list[Exercise]] = association_proxy(
+        "exercise_associations",
+        "exercise",
     )
