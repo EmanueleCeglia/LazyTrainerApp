@@ -1,0 +1,22 @@
+SELECT
+    e.id,
+    e.name,
+    e.exercise_type,
+    e.body_region,
+    e.movement_pattern,
+    STRING_AGG(DISTINCT m.name,  ', ') AS muscles,
+    STRING_AGG(DISTINCT eq.name, ', ') AS equipments
+FROM exercises               AS e
+LEFT JOIN exercise_muscles   AS em ON em.exercise_id  = e.id
+LEFT JOIN muscles            AS m  ON m.id           = em.muscle_id
+LEFT JOIN exercise_equipment AS ee ON ee.exercise_id = e.id
+LEFT JOIN equipment          AS eq ON eq.id          = ee.equipment_id
+
+-- AI generated filter
+WHERE
+    e.body_region IN ('upper body') AND
+    m.name IN ('chest') AND
+	e.movement_pattern IN ('horizontal push')
+
+GROUP BY e.id, e.name, e.exercise_type, e.body_region, e.movement_pattern
+ORDER BY e.id;
