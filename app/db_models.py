@@ -40,10 +40,12 @@ class ExerciseEquipment(Base):
 class Exercise(Base):
     __tablename__ = "exercises"
     id:               Mapped[int]  = mapped_column(Integer, primary_key=True)
-    name:             Mapped[str]  = mapped_column(String(100), unique=True, nullable=False)
-    exercise_type:    Mapped[str]  = mapped_column(String(100), nullable=False)
-    body_region:      Mapped[str]  = mapped_column(String(100), nullable=False)
+    name:             Mapped[str]  = mapped_column(String(100), nullable=False)
     movement_pattern: Mapped[str]  = mapped_column(String(100), nullable=False)
+    movement_type:    Mapped[str]  = mapped_column(String(100), nullable=False)
+    body_region:      Mapped[str]  = mapped_column(String(100), nullable=False)
+    load_class:      Mapped[str]  = mapped_column(String(100), nullable=False)
+    
 
     muscle_associations:    Mapped[list[ExerciseMuscle]]    = relationship(
         "ExerciseMuscle",
