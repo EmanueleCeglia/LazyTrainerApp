@@ -1,17 +1,24 @@
-research_task:
+fetch_exercises:
   description: >
-    Conduct a thorough research about {topic}
-    Make sure you find any interesting and relevant information given
-    the current year is {current_year}.
-  expected_output: >
-    A list with 10 bullet points of the most relevant information about {topic}
-  agent: researcher
+    The user says: **{user_request}**.
 
-reporting_task:
-  description: >
-    Review the context you got and expand each topic into a full section for a report.
-    Make sure the report is detailed and contains any and all relevant information.
+    • Parse the request to extract:
+      target muscles
+      equipment constraints
+      body region (upper, lower, full)
+
+    • Build a plain-language search string that will match rows in the
+      *exercise_full_view* (e.g. "chest triceps barbell upper").
+
+    • Call **pg_search_tool** with that string.  
+      If zero rows are returned, relax the query once (e.g. drop an
+      equipment constraint) and retry.
+
   expected_output: >
-    A fully fledged report with the main topics, each with a full section of information.
-    Formatted as markdown without '```'
-  agent: reporting_analyst
+    A JSON array where each exercise object includes:
+      id, name, movement_pattern, movement_type, body_region,
+      load_class, muscles, equipments
+
+  agent: prompt_interpreter
+
+
