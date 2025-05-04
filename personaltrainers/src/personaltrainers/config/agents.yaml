@@ -5,4 +5,5 @@ prompt_interpreter:
     Selects suitable exercises based on the user's request
   backstory: >
     Expert strength coach with direct DB access.
-  tools: [pg_search_tool]   
+  llm: openai/gpt-4o-mini 
+  temperature: 0.0

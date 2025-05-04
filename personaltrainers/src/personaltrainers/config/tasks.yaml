@@ -2,22 +2,34 @@ fetch_exercises:
   description: >
     The user says: **{user_request}**.
 
-    • Parse the request to extract:
-      target muscles
-      equipment constraints
-      body region (upper, lower, full)
+    Your task is to generate a WHERE filter for an SQL query based on the user request \
+    if the request does not speak about a training program your output mut be empty string.
 
-    • Build a plain-language search string that will match rows in the
-      *exercise_full_view* (e.g. "chest triceps barbell upper").
+    Your output must be an SQL query like the one delimited by triple backtics. \
+    If a column has no values drop it
 
-    • Call **pg_search_tool** with that string.  
-      If zero rows are returned, relax the query once (e.g. drop an
-      equipment constraint) and retry.
+    WHERE
+        body_region IN () AND
+        muscles LIKE '%muscle_name%' OR
+        muscles LIKE '%muscle_name%' OR 
+        ... 
+
+
+    Possible values:
+
+    body_region: 'upper body', 'lower body' 
+
+    muscles: 'chest', 'shoulders', 'tricpes', 'lats', 'biceps', 'quads', 'harmstrings', 'glutes', 'calves'
 
   expected_output: >
-    A JSON array where each exercise object includes:
-      id, name, movement_pattern, movement_type, body_region,
-      load_class, muscles, equipments
+    A string containing a SQL WHERE filter for the exercise table.
+    The filter should be in the format of a SQL WHERE clause, with the following structure:
+
+    WHERE
+        body_region IN () AND
+        muscles LIKE '%muscle_name%' OR
+        muscles LIKE '%muscle_name%' OR 
+        ... 
 
   agent: prompt_interpreter
 
