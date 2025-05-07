@@ -1,0 +1,10 @@
+{
+  "train_target": "Upper body",
+  "focus_muscle": true,
+  "muscles": [
+    "Chest",
+    "Shoulders"
+  ],
+  "duration_minutes": 120,
+  "location": "Gym"
+}

@@ -86,6 +86,7 @@ def cached_call(
             return cache[key]
 
     # ---- Cache miss: call the model -------------------------------------- #
+    print(prompt)
     response = model_fn(prompt)
 
     # ---- Persist result --------------------------------------------------- #

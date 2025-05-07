@@ -1,3 +1,6 @@
 {
-  "5bb1f81a17d4fc6b42392d6c516a61bfe0aeb540a10d6a22ecc8f943d8bbe5d1": "WHERE body_region IN ('upper body', 'lower body') AND muscles LIKE '%chest%' OR muscles LIKE '%shoulders%' OR muscles LIKE '%triceps%' OR muscles LIKE '%lats%' OR muscles LIKE '%biceps%' OR muscles LIKE '%quads%' OR muscles LIKE '%hamstrings%' OR muscles LIKE '%glutes%' OR muscles LIKE '%calves%'"
+  "5bb1f81a17d4fc6b42392d6c516a61bfe0aeb540a10d6a22ecc8f943d8bbe5d1": "WHERE body_region IN ('upper body', 'lower body') AND muscles LIKE '%chest%' OR muscles LIKE '%shoulders%' OR muscles LIKE '%triceps%' OR muscles LIKE '%lats%' OR muscles LIKE '%biceps%' OR muscles LIKE '%quads%' OR muscles LIKE '%hamstrings%' OR muscles LIKE '%glutes%' OR muscles LIKE '%calves%'",
+  "c4d9700d48a1c84bf9c87ba603fa1f95a2c821d344d3be87acde8207e2f998db": "WHERE body_region IN ('upper body') AND (muscles LIKE '%chest%' OR muscles LIKE '%shoulders%')",
+  "21dfc54378aa5c9d692ddff8ae5955f7bb85ac2f63e437bdea076c4b1474eadf": "WHERE body_region IN ('upper body') AND (muscles LIKE '%shoulders%' OR muscles LIKE '%chest%' OR muscles LIKE '%triceps%' OR muscles LIKE '%lats%' OR muscles LIKE '%biceps%')",
+  "2a11b6e150eb5923b65696661bec1a430bbbaa89fd0ba687fba6b9afd29ccadf": "WHERE body_region IN ('upper body') AND (muscles LIKE '%chest%' OR muscles LIKE '%shoulders%')"
 }
