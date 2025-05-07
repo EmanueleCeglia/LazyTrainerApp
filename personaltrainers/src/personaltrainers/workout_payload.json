@@ -1,14 +1,13 @@
 {
-  "train_target": "Upper body",
+  "train_target": "Full body",
   "focus_muscle": true,
   "muscles": [
     "Chest",
-    "Shoulders"
+    "Back",
+    "Quads"
   ],
-  "duration_minutes": 60,
-  "location": "Home",
-  "equipment_available": true,
-  "equipment": [
-    "Gymnastics rings"
-  ]
+  "duration_minutes": 120,
+  "location": "Park",
+  "equipment_available": false,
+  "equipment": []
 }
