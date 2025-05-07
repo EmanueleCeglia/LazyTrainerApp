@@ -9,26 +9,50 @@ fetch_exercises:
     If a column has no values drop it
 
     WHERE
-        body_region IN () AND
+        body_region IN () AND 
+        (
+        load_class LIKE '%load_class%' OR
+        load_class LIKE '%load_class%'
+        OR equipments in ()
+        )
+        AND
+        (
         muscles LIKE '%muscle_name%' OR
         muscles LIKE '%muscle_name%' OR 
+        )
         ... 
 
 
     Possible values:
 
     body_region: 'upper body', 'lower body' 
-
     muscles: 'chest', 'shoulders', 'tricpes', 'lats', 'biceps', 'quads', 'harmstrings', 'glutes', 'calves'
+    load_class: 'bodyweight', 'free-weight', 'machine'
+    equipments: 'gymnastics rings, parallel bars, parallettes, pull-up bar, barbell, dumbells, kettlebell, ground'
+
+    End possible values.
+
+    Please note:
+    If the load_class is 'Park' or 'Home' you must set load_class LIKE '%bodyweight%'
+    If the load_class is 'Gym' you must select: load_class LIKE '%bodyweight%' OR load_class LIKE '%free-weight%' OR load_class LIKE '%machine%'
+    If there is not a specific equipment specified in the request do not include "OR equipments in ()" in the WHERE filter
 
   expected_output: >
     A string containing a SQL WHERE filter for the exercise table.
     The filter should be in the format of a SQL WHERE clause, with the following structure:
 
     WHERE
-        body_region IN () AND
+        body_region IN () AND 
+        (
+        load_class LIKE '%load_class%' OR
+        load_class LIKE '%load_class%'
+        OR equipments in ()
+        )
+        AND
+        (
         muscles LIKE '%muscle_name%' OR
         muscles LIKE '%muscle_name%' OR 
+        )
         ... 
 
   agent: prompt_interpreter

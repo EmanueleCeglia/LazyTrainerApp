@@ -5,6 +5,10 @@
     "Chest",
     "Shoulders"
   ],
-  "duration_minutes": 120,
-  "location": "Gym"
+  "duration_minutes": 60,
+  "location": "Home",
+  "equipment_available": true,
+  "equipment": [
+    "Gymnastics rings"
+  ]
 }
