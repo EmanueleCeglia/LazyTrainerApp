@@ -1,10 +1,8 @@
 {
-  "train_target": "Upper body",
+  "train_target": "Full body",
   "focus_muscle": false,
   "muscles": [],
-  "duration_minutes": 120,
-  "location": "Home",
-  "equipment": [
-    "Ground"
-  ]
+  "duration_minutes": 101,
+  "location": "Gym",
+  "equipment": []
 }
