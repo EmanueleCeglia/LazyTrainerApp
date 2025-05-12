@@ -4,36 +4,32 @@ from crewai.agents.agent_builder.base_agent import BaseAgent
 from typing import List
 
 
-
 @CrewBase
-class PersonalTrainers():
-    """PersonalTrainers"""
+class ExerciseSelector():
+    """ExerciseSelector"""
 
 
     agents: List[BaseAgent]
     tasks: List[Task]
 
-    agents_config = "config/agents.yaml"
-    tasks_config = "config/tasks.yaml"
-
     @agent
-    def sql_query_generator(self) -> Agent:
+    def exercises_selector(self) -> Agent:
         return Agent(
-            config=self.agents_config['sql_query_generator'], 
+            config=self.agents_config['exercises_selector'], 
             verbose=False
         )
 
 
     @task
-    def fetch_exercises(self) -> Task:
+    def select_exercises(self) -> Task:
         return Task(
-            config=self.tasks_config['fetch_exercises'],
+            config=self.tasks_config['select_exercises'],
         )
 
 
     @crew
     def crew(self) -> Crew:
-        """Creates the PersonalTrainers"""
+        """Creates the ExerciseSelector"""
 
         return Crew(
             agents=self.agents, # Automatically created by the @agent decorator

@@ -4,6 +4,17 @@ sql_query_generator:
   goal: >
     Selects suitable exercises based on the user's request
   backstory: >
-    Expert strength coach with direct DB access.
+    Expert strength coach with knowledge on SQL queries.
   llm: openai/gpt-4o-mini 
   temperature: 0.0
+
+
+# exercises_selector:
+#   role: >
+#     Personal Trainer AI
+#   goal: >
+#     Selects suitable exercises from a given set based on the user's request and level
+#   backstory: >
+#     Expert strength coach with knowledge fitness exercises.
+#   llm: openai/gpt-4o-mini 
+#   temperature: 0.0

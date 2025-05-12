@@ -1,3 +1,3 @@
 {
-  "612ee3a7b05d413344dbd8e70f1bb54256b2304d66a7dfc1798f0e035f0e0102": "WHERE body_region IN ('upper body') AND ( muscles LIKE '%chest%' OR muscles LIKE '%shoulders%' OR muscles LIKE '%triceps%' OR muscles LIKE '%lats%' OR muscles LIKE '%biceps%' )"
+  "4c5b301e9df43d1f75f2615736fd16f6ae389bd29d26979e423f8b5ceb0d98e1": "WHERE body_region IN ('upper body') AND ( muscles LIKE '%biceps%' OR muscles LIKE '%triceps%' )"
 }

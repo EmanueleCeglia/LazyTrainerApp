@@ -62,3 +62,13 @@ fetch_exercises:
   agent: sql_query_generator
 
 
+# select_exercises:
+#   description: >
+#     modify
+
+#   expected_output: >
+#     modify
+
+#   agent: exercises_selector
+
+
