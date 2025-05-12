@@ -1,4 +1,4 @@
-prompt_interpreter:
+sql_query_generator:
   role: >
     Personal Trainer AI
   goal: >

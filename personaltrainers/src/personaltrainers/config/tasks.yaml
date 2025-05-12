@@ -10,10 +10,14 @@ fetch_exercises:
 
     WHERE
         body_region IN () AND 
-        equipments in () AND
+        (
+        equipments LIKE '%equipment_name%' OR 
+        equipments LIKE '%equipment_name%' ...
+        )
+        AND
         (
         muscles LIKE '%muscle_name%' OR
-        muscles LIKE '%muscle_name%' 
+        muscles LIKE '%muscle_name%' ...
         )
 
     Possible values:
@@ -25,23 +29,36 @@ fetch_exercises:
     End possible values.
 
     Please note:
-    If there is not a specific equipments specified in the prompt do not filter on equipments 
+    If there is not a specific equipments specified in the prompt you MUST not filter on equipments
 
   expected_output: >
     A string containing a SQL WHERE filter for the exercise table.
     The filter should be in the format of a SQL WHERE clause, with the following structure:
 
     Please note:
-    If there is not a specific equipments specified in the prompt do not filter on equipments 
-
+    If there is not a specific equipments specified in the prompt you MUST not filter on equipments
+    
+    Example in case of no equipments:
     WHERE
         body_region IN () AND 
-        equipments in () AND
         (
         muscles LIKE '%muscle_name%' OR
-        muscles LIKE '%muscle_name%' 
+        muscles LIKE '%muscle_name%' ...
+        )
+    
+    Example in case of equipments available:
+    WHERE
+        body_region IN () AND 
+        (
+        equipments LIKE '%equipment_name%' OR 
+        equipments LIKE '%equipment_name%' ...
+        )
+        AND
+        (
+        muscles LIKE '%muscle_name%' OR
+        muscles LIKE '%muscle_name%' ...
         )
 
-  agent: prompt_interpreter
+  agent: sql_query_generator
 
 

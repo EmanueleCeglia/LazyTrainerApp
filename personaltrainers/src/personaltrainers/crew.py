@@ -6,18 +6,18 @@ from typing import List
 
 
 @CrewBase
-class Personaltrainers():
-    """Personaltrainers crew"""
+class SQLCrew():
+    """SQLCrew"""
 
 
     agents: List[BaseAgent]
     tasks: List[Task]
 
     @agent
-    def prompt_interpreter(self) -> Agent:
+    def sql_query_generator(self) -> Agent:
         return Agent(
-            config=self.agents_config['prompt_interpreter'], 
-            verbose=True
+            config=self.agents_config['sql_query_generator'], 
+            verbose=False
         )
 
 
@@ -30,7 +30,7 @@ class Personaltrainers():
 
     @crew
     def crew(self) -> Crew:
-        """Creates the Personaltrainers crew"""
+        """Creates the SQLCrew"""
 
         return Crew(
             agents=self.agents, # Automatically created by the @agent decorator

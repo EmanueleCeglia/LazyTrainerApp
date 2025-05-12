@@ -1,8 +1,12 @@
 {
-  "train_target": "Full body",
-  "focus_muscle": false,
-  "muscles": [],
-  "duration_minutes": 101,
+  "level": "Advanced",
+  "train_target": "Upper body",
+  "focus_muscle": true,
+  "muscles": [
+    "Biceps",
+    "Triceps"
+  ],
+  "duration_minutes": 80,
   "location": "Gym",
   "equipment": []
 }
