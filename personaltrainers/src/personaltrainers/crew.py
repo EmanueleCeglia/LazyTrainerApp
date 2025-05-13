@@ -1,8 +1,17 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent
+from crewai.tools import tool
 from typing import List
+from tools.db_call import db_call
+import pandas as pd
 
+
+@tool("sql_query_tool")
+def sql_query_tool(where_clause: str) -> dict:
+    """Execute a SELECT * FROM exercises_view {where_clause}."""
+    df_exercises = db_call(where_clause)
+    return df_exercises.to_dict(orient="records")
 
 
 @CrewBase
@@ -22,12 +31,35 @@ class PersonalTrainers():
             config=self.agents_config['sql_query_generator'], 
             verbose=False
         )
+    
+    @agent
+    def sql_query_caller(self) -> Agent:
+        return Agent(
+            config=self.agents_config['sql_query_caller'], 
+            tools=[sql_query_tool],
+            verbose=False
+        )
 
 
     @task
     def fetch_exercises(self) -> Task:
         return Task(
             config=self.tasks_config['fetch_exercises'],
+        )
+    
+
+    @task
+    def run_query(self) -> Task:
+        return Task(
+            description=(
+            "You will receive the SQL WHERE clause from the previous task "
+            "in the task context. Call `sql_query_tool` with that clause "
+            "and return the resulting DataFrame."
+            ),
+            expected_output="A dictionary with the selected exercises.",
+            agent=self.sql_query_caller(),
+            tools=[sql_query_tool],
+            context=[self.fetch_exercises()]
         )
 
 

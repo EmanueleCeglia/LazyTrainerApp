@@ -1,39 +1,11 @@
 fetch_exercises:
   description: >
-    The user says: **{user_request}**.
-
-    Your task is to generate a WHERE filter for an SQL query based on the user request \
-    if the request does not speak about a training program your output mut be empty string.
+    Given the user request: **{user_request}**, output **ONLY** the SQL WHERE clause.
+    (including the word `WHERE`, no trailing semicolon, 
+    no back-ticks, no comments, no other text). 
 
     Your output must be an SQL query like the one delimited by triple backtics. \
     If a column has no values drop it
-
-    WHERE
-        body_region IN () AND 
-        (
-        equipments LIKE '%equipment_name%' OR 
-        equipments LIKE '%equipment_name%' ...
-        )
-        AND
-        (
-        muscles LIKE '%muscle_name%' OR
-        muscles LIKE '%muscle_name%' ...
-        )
-
-    Possible values:
-
-    body_region: 'upper body', 'lower body' 
-    muscles: 'chest', 'shoulders', 'tricpes', 'lats', 'biceps', 'quads', 'harmstrings', 'glutes', 'calves'
-    equipments: 'gymnastics rings, parallel bars, parallettes, pull-up bar, barbell, dumbells, kettlebell, ground'
-
-    End possible values.
-
-    Please note:
-    If there is not a specific equipments specified in the prompt you MUST not filter on equipments
-
-  expected_output: >
-    A string containing a SQL WHERE filter for the exercise table.
-    The filter should be in the format of a SQL WHERE clause, with the following structure:
 
     Please note:
     If there is not a specific equipments specified in the prompt you MUST not filter on equipments
@@ -59,16 +31,20 @@ fetch_exercises:
         muscles LIKE '%muscle_name%' ...
         )
 
+    Possible values:
+
+    body_region: 'upper body', 'lower body' 
+    muscles: 'chest', 'shoulders', 'tricpes', 'lats', 'biceps', 'quads', 'harmstrings', 'glutes', 'calves'
+    equipments: 'gymnastics rings, parallel bars, parallettes, pull-up bar, barbell, dumbells, kettlebell, ground'
+
+    End possible values.
+
+    Please note:
+    If there is not a specific equipments specified in the prompt you MUST not filter on equipments
+
+  expected_output: >
+    A single-line WHERE clause as plain text.
+
   agent: sql_query_generator
-
-
-# select_exercises:
-#   description: >
-#     modify
-
-#   expected_output: >
-#     modify
-
-#   agent: exercises_selector
 
 
