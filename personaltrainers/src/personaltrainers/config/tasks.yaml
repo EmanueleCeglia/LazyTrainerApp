@@ -41,6 +41,7 @@ fetch_exercises:
 
     Please note:
     If there is not a specific equipments specified in the prompt you MUST not filter on equipments
+    If there are not muscles specified in the prompt you MUST not filter on muscles
 
   expected_output: >
     A single-line WHERE clause as plain text.

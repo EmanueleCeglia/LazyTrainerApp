@@ -1,11 +1,13 @@
 from crewai import Agent, Crew, Process, Task
 from crewai.project import CrewBase, agent, crew, task
-from crewai.agents.agent_builder.base_agent import BaseAgent
+from crewai.agents.agent_builder.base_agent import BaseAgent, BaseModel
 from crewai.tools import tool
 from typing import List
 from tools.db_call import db_call
 import pandas as pd
 
+class WhereClause(BaseModel):
+    clause: str
 
 @tool("sql_query_tool")
 def sql_query_tool(where_clause: str) -> dict:
@@ -45,6 +47,7 @@ class PersonalTrainers():
     def fetch_exercises(self) -> Task:
         return Task(
             config=self.tasks_config['fetch_exercises'],
+            output_pydantic=WhereClause  
         )
     
 
@@ -52,9 +55,8 @@ class PersonalTrainers():
     def run_query(self) -> Task:
         return Task(
             description=(
-            "You will receive the SQL WHERE clause from the previous task "
-            "in the task context. Call `sql_query_tool` with that clause "
-            "and return the resulting DataFrame."
+            "Call `sql_query_tool` with the following clause:\n"
+            "{{tasks.fetch_exercises.pydantic.clause}}"
             ),
             expected_output="A dictionary with the selected exercises.",
             agent=self.sql_query_caller(),
