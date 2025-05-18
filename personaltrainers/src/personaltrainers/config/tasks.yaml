@@ -51,25 +51,27 @@ fetch_exercises:
 
 select_exercises:
   description: >
-    Given the user request: **{user_needs}** and the selected exercises:
+    Given the user request: **{user_needs}** and the selected exercises from the following exercises:
 
-    {{tasks.run_query.pydantic.clause}}
+    {{tasks.run_query.pydantic.exercises}}
 
-    Select some exercises basing your choice on the following instructions:
+
+    Select some exercises following these instructions:
     
-    - The number of the exercises coherent must be coherent with the duration of the traning program.
-      If the exercises are already few, select all of them.
-    - The order of exercises should adhere to the following rule if possible: first compund and then isolation.
-    - Do not select only compund and only isolation if not specified in the user needs.
-    - For upper body exercises, if possible, include all the possible combinations of "movement_pattern".
-    - For upper body exercises, if possible, alternate push and pull or pull and push.
-    - For total body exercises, put the legs exercises at the beginning of the training program.
-    - If the user is Beginner select safer exercises using the "load_class" and your knowledge on the difficulty of the exercises.
-    - If the user is Intermediate select more medium-advanced exercises using the "load_class" and your knowledge on the difficulty of the exercises.
-    - If the user is Advanced select more advanced exercises using the "load_class" and your knowledge on the difficulty of the exercises.
-    
+    - Select **ONLY** the exercises from the exercises provided, do not hallucinate any new exercises, do not change any name! \n
+    - The number of the exercises coherent must be coherent with the duration of the traning program. 
+      If the exercises are already few, select all of them. \n
+    - The order of exercises should adhere to the following rule if possible: first compound and then isolation. \n
+    - Do not select only compound and only isolation if not specified in the user needs. \n
+    - For upper body exercises, if possible, include all the possible combinations of "movement_pattern": \n
+      alternating between push and pull (or pull and push) exercises.
+      including horizontal and vertical. \n
+    - For total body exercises, put the legs exercises at the beginning of the training program. \n
+    - If the user is Beginner prefer exercises with "load_class": machine or bodyweight. \n
+    - If the user is Intermediate select more medium-advanced exercises using the "load_class" and your knowledge on the difficulty of the exercises. \n
+    - If the user is Advanced select more advanced exercises using the "load_class" and your knowledge on the difficulty of the exercises. \n
 
   expected_output: >
-    A dictionary with the selected exercises.
+    Output **ONLY** the list of dictionaries with the selected exercises.
 
   agent: esercises_selector

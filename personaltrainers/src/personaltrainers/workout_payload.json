@@ -1,9 +1,13 @@
 {
-  "level": "Intermediate",
-  "train_target": "Lower body",
-  "focus_muscle": false,
-  "muscles": [],
-  "duration_minutes": 120,
+  "level": "Beginner",
+  "train_target": "Upper body",
+  "focus_muscle": true,
+  "muscles": [
+    "Chest",
+    "Lats",
+    "Shoulders"
+  ],
+  "duration_minutes": 60,
   "location": "Gym",
   "equipment": []
 }

@@ -1,10 +1,8 @@
 sql_query_generator:
-  role: >
-    Personal Trainer AI
-  goal: >
-    Selects suitable exercises based on the user's request
-  backstory: >
-    Expert strength coach with knowledge on SQL queries.
+  name: SQL Query Creator
+  role: Personal Trainer AI
+  goal: Selects suitable exercises based on the user's request
+  backstory: Expert strength coach with knowledge on SQL queries.
   llm: openai/gpt-4o-mini 
   temperature: 0.0
 
@@ -12,8 +10,7 @@ sql_query_generator:
 sql_query_caller:
   name: Database Query Runner
   role: executor
-  goal: >
-    Execute database queries and return the resulting DataFrame.
+  goal: Execute database queries and return the resulting DataFrame.
   backstory: >
     Works with generated WHERE clauses to fetch the appropriate
     exercises from the database.
@@ -23,10 +20,9 @@ sql_query_caller:
 
 
 esercises_selector:
-  role: >
-    Personal Trainer AI
-  goal: >
-    Selects suitable exercises based on the user's request
+  name: Exercises Selector
+  role: filter
+  goal: Selects suitable exercises based on the user's request
   backstory: >
     Expert coach with knowledge in selecting proper exercises.
   llm: openai/gpt-4o-mini 
