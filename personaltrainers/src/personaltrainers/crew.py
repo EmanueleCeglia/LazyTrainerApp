@@ -9,6 +9,9 @@ import pandas as pd
 class WhereClause(BaseModel):
     clause: str
 
+class MacroExercises(BaseModel):
+    clause: dict
+
 @tool("sql_query_tool")
 def sql_query_tool(where_clause: str) -> dict:
     """Execute a SELECT * FROM exercises_view {where_clause}."""
@@ -41,6 +44,13 @@ class PersonalTrainers():
             tools=[sql_query_tool],
             verbose=False
         )
+    
+    @agent
+    def esercises_selector(self) -> Agent:
+        return Agent(
+            config=self.agents_config['esercises_selector'], 
+            verbose=False
+        )
 
 
     @task
@@ -62,6 +72,14 @@ class PersonalTrainers():
             agent=self.sql_query_caller(),
             tools=[sql_query_tool],
             context=[self.fetch_exercises()]
+        )
+
+
+    @task
+    def select_exercises(self) -> Task:
+        return Task(
+            config=self.tasks_config['select_exercises'],
+            context=[self.run_query()]
         )
 
 

@@ -22,3 +22,17 @@ def prep_prompt_for_fetch_exercises(payload: dict) -> str:
     prompt = prompt.replace("]", "")
     
     return prompt
+
+
+def prep_prompt_for_select_exercises(payload: dict) -> str:
+
+    prompt = f"The user, with {payload.get('level')} experience, is looking for a/an {payload.get('train_target')} training program focusing "
+
+    if payload.get('focus_muscle'):
+        prompt += f"on the following muscles: {payload.get('muscles')}. "
+    else:
+        prompt += f"on all the muscles presents in the selected exercises. "
+
+    prompt += f"The duration of the training program is {payload.get('duration_minutes')} minutes"
+    
+    return prompt

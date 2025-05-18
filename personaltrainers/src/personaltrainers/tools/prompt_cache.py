@@ -52,7 +52,8 @@ def _save_cache(cache: Dict[str, str], path: Path) -> None:
 # --------------------------------------------------------------------------- #
 
 def cached_call(
-    prompt: str,
+    prompt_1: str,
+    prompt_2: str,
     model_fn: Callable[[str], str],
     cache_path: Path | str = "prompt_cache.json",
 ) -> str:
@@ -77,6 +78,7 @@ def cached_call(
         The model response (from cache or fresh call).
     """
     cache_path = Path(cache_path)
+    prompt = prompt_1 + "\n" + prompt_2
     key = _hash_prompt(prompt)
 
     # ---- Fast path: try cache first --------------------------------------- #
@@ -86,8 +88,7 @@ def cached_call(
             return cache[key]
 
     # ---- Cache miss: call the model -------------------------------------- #
-    print(prompt)
-    response = model_fn(prompt)
+    response = model_fn(prompt_1, prompt_2)
 
     # ---- Persist result --------------------------------------------------- #
     with _LOCK:

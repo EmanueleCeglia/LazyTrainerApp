@@ -20,3 +20,14 @@ sql_query_caller:
   allow_delegation: false
   llm: openai/gpt-4o-mini 
   temperature: 0.0
+
+
+esercises_selector:
+  role: >
+    Personal Trainer AI
+  goal: >
+    Selects suitable exercises based on the user's request
+  backstory: >
+    Expert coach with knowledge in selecting proper exercises.
+  llm: openai/gpt-4o-mini 
+  temperature: 0.0
