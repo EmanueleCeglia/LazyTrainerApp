@@ -13,7 +13,7 @@ class MacroExercises(BaseModel):
     exercises: str
 
 class FinalExercises(BaseModel):
-    exercises: List[Dict]
+    exercises: List[str]
 
 @tool("sql_query_tool")
 def sql_query_tool(where_clause: str) -> dict:
