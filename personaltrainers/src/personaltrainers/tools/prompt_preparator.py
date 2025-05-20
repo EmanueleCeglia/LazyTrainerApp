@@ -1,7 +1,8 @@
 
 
-def prep_prompt_for_fetch_exercises(payload: dict) -> str:
+def prep_prompt_for_fetch_exercises(payload_orig: dict) -> str:
 
+    payload = payload_orig.copy()
     if payload.get('train_target') == 'Full body':
         payload['train_target'] = 'Upper body, Lower body'
 

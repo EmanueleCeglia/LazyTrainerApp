@@ -57,7 +57,7 @@ select_exercises:
 
     1. **user_needs** – free-text summary of the athlete's goal, level
        (Beginner / Intermediate / Advanced), session duration, focus
-       (upper-body, lower-body, full-body, etc.), available equipment and any
+       (upper-body, lower-body, etc.), available equipment and any
        limitations.
     2. **exercises** – list of dictionaries from #name		movement_type	body_region	load_class	muscles	equipments
        `{{tasks.run_query.pydantic.exercises}}`, each containing at least:
@@ -76,19 +76,25 @@ select_exercises:
 
     **Selection rules (apply in order)**
 
-    1. **Session length** – choose a count suitable for the stated duration
-       (≈ between 4 and 6 exercises for ~60-90 min; between 6 and 9 for ~120 min).  
-       If fewer exercises are available, include them all.
-    2. **Difficulty vs. level**
+    1. **Session length** – choose a total that fits the planned duration  
+       • ≈ 4 – 6 exercises → 60 – 90 min sessions  
+       • ≈ 6 – 9 exercises → ≥ 120 min sessions  
+       (If the pool is smaller than these targets, include every exercise.)
+
+    2. **Full-body coverage** – whenever both upper-body **and** lower-body
+      movements exist in the pool, treat the program as full-body and select
+       at least one exercise for each region (upper + lower).  
+       *Never* drop an entire region unless the user explicitly rules it out.
+    3. **Difficulty vs. level**
        - Beginner → favour `load_class ∈ {machine, bodyweight}`.
        - Intermediate → mix in more free-weight / medium-skill lifts.
        - Advanced → free to include the most technical / heavy variations.
-    3. **Ordering**
+    4. **Ordering**
        - Start with compound movements, then isolation.
        - For full-body programs, place lower-body compounds first.
-    4. **Upper-body balance** – when the session is upper-body focused,
+    5. **Upper-body balance** – when the session is upper-body focused,
        alternate *push* ↔ *pull* patterns and cover both **horizontal** and **vertical** planes when possible.
-    5. **Coverage** – unless explicitly requested, do **not** output only compounds or only isolations.
+    6. **Coverage** – unless explicitly requested, do **not** output only compounds or only isolations.
 
     **Output**
 
