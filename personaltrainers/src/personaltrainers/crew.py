@@ -12,6 +12,9 @@ class WhereClause(BaseModel):
 class MacroExercises(BaseModel):
     exercises: str
 
+class SelectedExercises(BaseModel):
+    exercises: List[str]
+
 class FinalExercises(BaseModel):
     exercises: List[str]
 
@@ -37,7 +40,7 @@ class PersonalTrainers():
     def sql_query_generator(self) -> Agent:
         return Agent(
             config=self.agents_config['sql_query_generator'], 
-            verbose=True
+            verbose=False
         )
     
     @agent
@@ -45,14 +48,21 @@ class PersonalTrainers():
         return Agent(
             config=self.agents_config['sql_query_caller'], 
             tools=[sql_query_tool],
-            verbose=True
+            verbose=False
         )
     
     @agent
     def esercises_selector(self) -> Agent:
         return Agent(
             config=self.agents_config['esercises_selector'], 
-            verbose=True
+            verbose=False
+        )
+    
+    @agent
+    def protocols_generator(self) -> Agent:
+        return Agent(
+            config=self.agents_config['protocols_generator'], 
+            verbose=False
         )
 
 
@@ -84,6 +94,15 @@ class PersonalTrainers():
         return Task(
             config=self.tasks_config['select_exercises'],
             context=[self.run_query()],
+            output_pydantic=SelectedExercises
+        )
+    
+
+    @task
+    def generate_protocols(self) -> Task:
+        return Task(
+            config=self.tasks_config['generate_protocols'],
+            context=[self.select_exercises()],
             output_pydantic=FinalExercises
         )
 
@@ -96,6 +115,6 @@ class PersonalTrainers():
             agents=self.agents, # Automatically created by the @agent decorator
             tasks=self.tasks, # Automatically created by the @task decorator
             process=Process.sequential,
-            verbose=True,
+            verbose=False,
             # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
         )

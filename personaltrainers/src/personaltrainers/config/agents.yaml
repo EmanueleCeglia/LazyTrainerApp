@@ -27,3 +27,13 @@ esercises_selector:
     Expert coach with knowledge in selecting proper exercises.
   llm: openai/gpt-4o-mini 
   temperature: 0.0
+
+
+protocols_generator:
+  name: Programs generator
+  role: generator
+  goal: Create different training protocols for every exercise
+  backstory: >
+    Expert coach with knowledge in training methods.
+  llm: openai/gpt-4o-mini 
+  temperature: 0.5

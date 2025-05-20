@@ -105,6 +105,95 @@ select_exercises:
 
 
 
+generate_protocols:
+  description: |
+    You are an expert strength-training coach and programming assistant.
+
+    ─── Inputs ──────────────────────────────────────────────────────────────
+    **exercises** – list of dictionaries from
+    `{{tasks.select_exercises.pydantic.exercises}}`, each containing at least:
+      - name
+      - movement_pattern          # e.g. "horizontal push"
+      - movement_type             # "compound" | "isolation"
+      - body_region               # "upper", "lower", "full"
+      - load_class                # "bodyweight" | "machine" | "free_weight"
+      - muscles
+      - equipments
+      - (other keys may exist — leave unchanged)
+
+    ─── Protocol pool ───────────────────────────────────────────────────────
+      1. Straight Sets
+      2. Ascending Pyramid
+      3. Descending Pyramid
+      4. Reverse Pyramid
+      5. Double Progression
+      6. Wave Loading
+      7. German Volume Training (10x10)
+      8. 5×5 Linear Progression
+      9. EMOM (Every Minute on the Minute)
+     10. AMRAP (As Many Reps As Possible)
+     11. Cluster Sets
+     12. Rest-Pause
+     13. Drop Sets
+
+    ─── Task ───────────────────────────────────────────────────────────────
+    For **every** exercise dictionary:
+
+    1. Pick **three distinct protocols** from the pool that suit the exercise.
+       Name the keys exactly `prot_1`, `prot_2`, `prot_3`.
+    2. Replace the word **repetitions** with concrete prescriptions,
+       using the guidelines below (override them when logic demands).
+
+       │ Protocol                           │ Typical prescription              │
+       │────────────────────────────────────│───────────────────────────────────│
+       │ Straight Sets                      │ 4 sets × 8 reps (iso: 3×12)       │
+       │ Ascending Pyramid / Desc. Pyramid  │ 3 sets × 12-10-8 reps             │
+       │ Reverse Pyramid                    │ 3 sets × 8-6-4 reps (iso: 12-10-8)│
+       │ Double Progression                 │ 3 sets × 6-8 reps until both top  │
+       │ Wave Loading                       │ 6 sets × 3 reps (e.g. 80-85-90 %) │
+       │ German Volume Training             │ 10 sets × 10 reps (compound only) │
+       │ 5×5 Linear Progression             │ 5 sets × 5 reps                   │
+       │ EMOM                               │ 10 min × 3-5 reps per minute      │
+       │ AMRAP (bodyweight/machine)         │ 2 sets × max reps                 │
+       │ AMRAP (free weight)                │ 1 set × max reps ≤ 8              │
+       │ Cluster Sets                       │ 4 sets × (4×2 reps, :15 rest)     │
+       │ Rest-Pause                         │ 1 set × max-reps +2×RP            │
+       │ Drop Sets                          │ 1 set × 8 reps +2×drops           │
+
+       **Heuristics**
+
+       • Isolation work → favour higher reps (≥ 10) and lighter methods  
+         (Straight, Asc/Desc Pyramid, Drop, Rest-Pause).  
+       • Heavy compounds → favour strength-oriented methods  
+         (5×5, Reverse/Wave, Cluster, EMOM).  
+       • Bodyweight → AMRAP, EMOM, Straight Sets.  
+       • Machine → tolerate higher total volume.
+
+    3. Never delete or rename existing keys, never invent new exercises.
+
+    ─── Output ─────────────────────────────────────────────────────────────
+    Respond with **only** a JSON-serialisable Python list of the modified
+    dictionaries, in the same order received — no extra text, no markdown
+    fences, no wrapper objects.
+
+  expected_output: |
+    exercises = '[
+      {
+        "name": "pull ups",
+        "movement_pattern": "vertical pull",
+        …,
+        "prot_1": "Reverse Pyramid | 3 sets 8-6-4 reps",
+        "prot_2": "AMRAP | 1 set max reps ≤ 8",
+        "prot_3": "5×5 Linear Progression | 5 sets 5 reps"
+      },
+      …
+    ]'
+
+  agent: protocols_generator
+
+
+
+
 # select_exercises:
 #   description: >
 #     Given the user request: **{user_needs}** and the selected exercises from the following exercises:
