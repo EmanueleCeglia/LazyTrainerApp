@@ -1,9 +1,17 @@
 {
   "level": "Intermediate",
-  "train_target": "Full body",
-  "focus_muscle": false,
-  "muscles": [],
-  "duration_minutes": 120,
-  "location": "Gym",
-  "equipment": []
+  "train_target": "Upper body",
+  "focus_muscle": true,
+  "muscles": [
+    "Chest",
+    "Biceps"
+  ],
+  "duration_minutes": 90,
+  "location": "Park",
+  "equipment": [
+    "Gymnastics rings",
+    "Pull-up bar",
+    "Parallel bars",
+    "Ground"
+  ]
 }

@@ -1,22 +1,34 @@
 
+from pydantic import BaseModel
+from typing import Union
 
-def prep_prompt_for_fetch_exercises(payload_orig: dict) -> str:
-
-    payload = payload_orig.copy()
-    if payload.get('train_target') == 'Full body':
+def prep_prompt_for_fetch_exercises(payload_orig) -> str:
+    # Converti l'oggetto Pydantic in dizionario
+    if hasattr(payload_orig, 'model_dump'):
+        # Pydantic v2
+        payload = payload_orig.model_dump()
+    elif hasattr(payload_orig, 'dict'):
+        # Pydantic v1
+        payload = payload_orig.dict()
+    else:
+        # Se è già un dizionario
+        payload = payload_orig.copy()
+    
+    # Modifica la copia del dizionario
+    if payload['train_target'] == 'Full body':
         payload['train_target'] = 'Upper body, Lower body'
 
     prompt = f"""
     Select the exercises using these informations:
-    - body_region: {payload.get('train_target')}"""
+    - body_region: {payload['train_target']}"""
 
-    if payload.get('focus_muscle'):
+    if payload['focus_muscle']:
         prompt += f""" 
-        - muscles: {payload.get('muscles')}"""
+        - muscles: {payload['muscles']}"""
 
-    if payload.get('equipment'):
+    if payload.get('equipment'):  # Usa .get() sul dizionario
         prompt += f"""
-        - equipment: {payload.get('equipment')}"""
+        - equipment: {payload['equipment']}"""
         
     prompt = prompt.replace("'", "")
     prompt = prompt.replace("[", "")
@@ -25,15 +37,25 @@ def prep_prompt_for_fetch_exercises(payload_orig: dict) -> str:
     return prompt
 
 
-def prep_prompt_for_select_exercises(payload: dict) -> str:
+def prep_prompt_for_select_exercises(payload) -> str:
+    # Converti l'oggetto Pydantic in dizionario se necessario
+    if hasattr(payload, 'model_dump'):
+        # Pydantic v2
+        data = payload.model_dump()
+    elif hasattr(payload, 'dict'):
+        # Pydantic v1
+        data = payload.dict()
+    else:
+        # Se è già un dizionario
+        data = payload
 
-    prompt = f"The user, with {payload.get('level')} experience, is looking for a/an {payload.get('train_target')} training program focusing "
+    prompt = f"The user, with {data['level']} experience, is looking for a/an {data['train_target']} training program focusing "
 
-    if payload.get('focus_muscle'):
-        prompt += f"on the following muscles: {payload.get('muscles')}. "
+    if data['focus_muscle']:
+        prompt += f"on the following muscles: {data['muscles']}. "
     else:
         prompt += f"on all the muscles presents in the selected exercises. "
 
-    prompt += f"The duration of the training program is {payload.get('duration_minutes')} minutes"
+    prompt += f"The duration of the training program is {data['duration_minutes']} minutes"
     
     return prompt

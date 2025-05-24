@@ -1,44 +1,42 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from openai import OpenAI
+from typing import List
 import os
+import sys
 
+# risale di due cartelle e punta a personaltrainers/src
+root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+src_dir = os.path.join(root, 'personaltrainers', 'src')
+sys.path.insert(0, src_dir)
 
-# Set up your OpenAI API key, ensuring you have it available as environment variable.
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+from personaltrainers import test_crew
 
-# Create the FastAPI app instance
 app = FastAPI()
 
-# Define the data model for the incoming JSON payload
-class RequestData(BaseModel):
-    nome: str      # The user's name
-    prompt: str    # The prompt provided by the user
+# NUOVO MODELLO per /workout  
+class WorkoutData(BaseModel):
+    level: str
+    train_target: str
+    focus_muscle: bool          # ← IMPORTANTE: bool, non str
+    muscles: List[str]               # ← IMPORTANTE: "muscles", non "muscle"
+    duration_minutes: int
+    location: str
+    equipment: List[str] 
 
 
 
 # Define the endpoint that receives the JSON data from the Android app
-@app.post("/sendprompt")
-async def process_request(data: RequestData):
+@app.post("/workout")
+async def process_workout(payload: WorkoutData):
+
     try:
-        # Create a new prompt by combining the 'nome' and 'prompt' received
-        new_prompt = f"User name: {data.nome}. Please process the following prompt: {data.prompt}"
+        # Usa il tuo test_crew con i dati del questionario
+        generated_text = test_crew.test_crew(payload=payload)
         
-        # Call the GPT API using OpenAI's Completion API
-        response = client.responses.create(
-            model="gpt-4o-mini",
-            input=new_prompt
-        )
-        
-        # Estrai la risposta (testo generato) dalla risposta dell'API
-        generated_text = response.output_text
-        
-        # Restituisci la risposta in formato JSON
         return JSONResponse(content={"generated_text": generated_text}, headers={"Content-Type": "application/json; charset=utf-8"})
     
     except Exception as e:
-        # In caso di errori, restituisci uno status 500 e il messaggio d'errore
         raise HTTPException(status_code=500, detail=str(e))
 
 

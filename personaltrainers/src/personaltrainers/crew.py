@@ -3,7 +3,7 @@ from crewai.project import CrewBase, agent, crew, task
 from crewai.agents.agent_builder.base_agent import BaseAgent, BaseModel
 from crewai.tools import tool
 from typing import List, Dict
-from tools.db_call import db_call
+from .tools.db_call import db_call
 import pandas as pd
 
 class WhereClause(BaseModel):
