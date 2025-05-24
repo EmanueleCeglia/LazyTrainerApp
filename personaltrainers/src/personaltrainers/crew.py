@@ -40,7 +40,7 @@ class PersonalTrainers():
     def sql_query_generator(self) -> Agent:
         return Agent(
             config=self.agents_config['sql_query_generator'], 
-            verbose=False
+            verbose=True
         )
     
     @agent
@@ -48,21 +48,21 @@ class PersonalTrainers():
         return Agent(
             config=self.agents_config['sql_query_caller'], 
             tools=[sql_query_tool],
-            verbose=False
+            verbose=True
         )
     
     @agent
     def esercises_selector(self) -> Agent:
         return Agent(
             config=self.agents_config['esercises_selector'], 
-            verbose=False
+            verbose=True
         )
     
     @agent
     def protocols_generator(self) -> Agent:
         return Agent(
             config=self.agents_config['protocols_generator'], 
-            verbose=False
+            verbose=True
         )
 
 
@@ -115,6 +115,6 @@ class PersonalTrainers():
             agents=self.agents, # Automatically created by the @agent decorator
             tasks=self.tasks, # Automatically created by the @task decorator
             process=Process.sequential,
-            verbose=False,
+            verbose=True,
             # process=Process.hierarchical, # In case you wanna use that instead https://docs.crewai.com/how-to/Hierarchical/
         )

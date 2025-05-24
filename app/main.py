@@ -4,6 +4,11 @@ from pydantic import BaseModel
 from typing import List
 import os
 import sys
+import logging
+
+# Configura logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # risale di due cartelle e punta a personaltrainers/src
 root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -29,14 +34,32 @@ class WorkoutData(BaseModel):
 # Define the endpoint that receives the JSON data from the Android app
 @app.post("/workout")
 async def process_workout(payload: WorkoutData):
-
+    logger.info("=== INIZIO ENDPOINT ===")
+    logger.info(f"Payload ricevuto: {payload}")
+    logger.info("=== INIZIO ENDPOINT ===")
+    logger.info(f"Payload RAW: {payload}")
+    logger.info(f"Level: '{payload.level}' (type: {type(payload.level)})")
+    logger.info(f"Train target: '{payload.train_target}' (type: {type(payload.train_target)})")
+    logger.info(f"Focus muscle: {payload.focus_muscle} (type: {type(payload.focus_muscle)})")
+    logger.info(f"Muscles: {payload.muscles} (type: {type(payload.muscles)})")
+    logger.info(f"Duration: {payload.duration_minutes} (type: {type(payload.duration_minutes)})")
+    logger.info(f"Location: '{payload.location}' (type: {type(payload.location)})")
+    logger.info(f"Equipment: {payload.equipment} (type: {type(payload.equipment)})")
     try:
-        # Usa il tuo test_crew con i dati del questionario
+        logger.info("Chiamando test_crew.test_crew()...")
         generated_text = test_crew.test_crew(payload=payload)
+        logger.info(f"Risultato da test_crew: {generated_text}")
         
-        return JSONResponse(content={"generated_text": generated_text}, headers={"Content-Type": "application/json; charset=utf-8"})
+        response = JSONResponse(
+            content={"generated_text": generated_text}, 
+            headers={"Content-Type": "application/json; charset=utf-8"}
+        )
+        logger.info("=== FINE ENDPOINT (SUCCESS) ===")
+        return response
     
     except Exception as e:
+        logger.error(f"Errore in process_workout: {str(e)}")
+        logger.error(f"Tipo errore: {type(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
