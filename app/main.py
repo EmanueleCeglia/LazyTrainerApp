@@ -5,6 +5,7 @@ from typing import List
 import os
 import sys
 import logging
+import json
 
 # Configura logging
 logging.basicConfig(level=logging.INFO)
@@ -48,6 +49,7 @@ async def process_workout(payload: WorkoutData):
     try:
         logger.info("Chiamando test_crew.test_crew()...")
         generated_text = test_crew.test_crew(payload=payload)
+        generated_text = json.loads(generated_text)
         logger.info(f"Risultato da test_crew: {generated_text}")
         
         response = JSONResponse(
