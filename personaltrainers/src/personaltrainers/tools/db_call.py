@@ -6,33 +6,34 @@ from sqlalchemy import create_engine
 
 
 def db_call(where_clause: str) -> pd.DataFrame:
-    # ------------------------------------------------------------------
-    # 1) Load database credentials from .env
-    # ------------------------------------------------------------------
-    load_dotenv()  # this reads .env placed in project root
+    load_dotenv() # Utile se vuoi poter sovrascrivere con un .env locale per sviluppo non Docker
 
-    user     = os.getenv("POSTGRES_USER")
-    password = os.getenv("POSTGRES_PASSWORD")
-    database = os.getenv("POSTGRES_DB")
-    host     = os.getenv("POSTGRES_HOST", "localhost")  # default to localhost
-    port     = 5432                                     # change if you mapped a different port
+    # Prioritizza DATABASE_URL se esiste (impostata da Docker Compose)
+    database_url = os.getenv("DATABASE_URL")
 
-    # ------------------------------------------------------------------
-    # 2) Create SQLAlchemy engine (psycopg2 is used under the hood)
-    # ------------------------------------------------------------------
-    engine = create_engine(
-        f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}",
-        echo=False,          # set True if you want to log every SQL statement
-    )
+    if database_url:
+        # Se DATABASE_URL usa postgresql:// (comune), SQLAlchemy potrebbe preferire postgresql+psycopg2://
+        # Assicurati che il dialect sia corretto se necessario, es:
+        if database_url.startswith("postgresql://"):
+             database_url = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        engine = create_engine(database_url, echo=False)
+    else:
+        # Fallback al metodo precedente se DATABASE_URL non è impostata
+        # (utile per ambienti dove non vuoi usare DATABASE_URL)
+        user     = os.getenv("POSTGRES_USER")
+        password = os.getenv("POSTGRES_PASSWORD")
+        database = os.getenv("POSTGRES_DB")
+        host     = os.getenv("POSTGRES_HOST", "db") # Cambia default a 'db' per Docker se non usi DATABASE_URL
+        port     = os.getenv("POSTGRES_PORT", 5432) # Rendi anche la porta configurabile
+        
+        if not all([user, password, database, host]):
+            raise ValueError("Mancano le credenziali del database o l'host.")
 
-    # ------------------------------------------------------------------
-    # 3) Write the query (triple-quoted string is handy for multiline SQL)
-    # ------------------------------------------------------------------
+        engine = create_engine(
+            f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}",
+            echo=False,
+        )
+
     query = f"""SELECT * FROM exercises_view {where_clause};"""
-
-    # ------------------------------------------------------------------
-    # 4) Read the query directly into a pandas DataFrame
-    # ------------------------------------------------------------------
     df = pd.read_sql(text(query), engine)
-
     return df

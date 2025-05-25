@@ -8,6 +8,7 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}  # se devi usare GPT
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - POSTGRES_HOST=db
     depends_on:
       - db
 
