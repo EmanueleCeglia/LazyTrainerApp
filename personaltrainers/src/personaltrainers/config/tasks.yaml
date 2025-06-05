@@ -110,7 +110,7 @@ select_exercises:
   agent: esercises_selector
 
 
-
+# TODO: Modificare il prompt sotto: cambiare i metodi e inserire metodi adatti a seconda dell'expertise dell'utente
 generate_protocols:
   description: |
     You are an expert strength-training coach and programming assistant.
