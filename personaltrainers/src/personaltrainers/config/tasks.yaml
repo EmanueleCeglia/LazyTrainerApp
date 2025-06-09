@@ -55,7 +55,7 @@ select_exercises:
 
     **Inputs**
 
-    1. **user_needs** – free-text summary of the athlete's goal, level
+    1. **{user_needs}** – free-text summary of the athlete's goal, level
        (Beginner / Intermediate / Advanced), session duration, focus
        (upper-body, lower-body, etc.), available equipment and any
        limitations.
@@ -117,7 +117,10 @@ generate_protocols:
 
     ---
     ## Inputs
-    - **exercises**: A list of dictionaries from `{{tasks.select_exercises.pydantic.exercises}}`. Each dictionary contains details about an exercise, including `name`, `movement_pattern`, `movement_type`, `body_region`, `load_class`, `muscles`, and `equipments`.
+    - **exercises**: A list of dictionaries from `{{tasks.select_exercises.pydantic.exercises}}`. 
+    Each dictionary contains details about an exercise, including `name`, `movement_pattern`, `movement_type`, `body_region`, `load_class`, `muscles`, and `equipments`.
+
+    - **{user_level}**: The level of the user
 
     ---
     ## Task
@@ -140,7 +143,6 @@ generate_protocols:
     | Reverse Pyramid                   | 3 sets × 8-6-4 reps (iso: 12-10-8)      |
     | Double Progression                | 3 sets × 6-8 reps until top of range    |
     | Wave Loading                      | 6 sets × 3 reps (e.g., 80-85-90%)       |
-    | German Volume Training            | 10 sets × 10 reps (compound only)       |
     | 5×5 Linear Progression            | 5 sets × 5 reps                         |
     | EMOM                              | 10 min × 3-5 reps per minute            |
     | AMRAP (bodyweight/machine)        | 2 sets × max reps                       |
@@ -151,10 +153,11 @@ generate_protocols:
 
     ---
     ## Heuristics
-    - **Isolation work**: Favor higher reps (≥10) and methods like Straight Sets, Ascending/Descending Pyramid, Drop Sets, and Rest-Pause.
-    - **Heavy compounds**: Lean towards strength-focused methods like 5x5, Reverse Pyramid, Wave Loading, Cluster Sets, and EMOM.
+    - **Isolation**: Favor higher reps (≥10) and methods like Straight Sets, Ascending/Descending Pyramid, Drop Sets, and Rest-Pause.
+    - **Compounds**: Lean towards strength-focused methods like 5x5, Reverse Pyramid, Wave Loading, Cluster Sets, and EMOM.
     - **Bodyweight**: Good candidates are AMRAP, EMOM, and Straight Sets.
     - **Machines**: Can handle higher total volume.
+    - Modify the number of repetitions or sets depeding on the **user_level**
 
     ---
     ## Output

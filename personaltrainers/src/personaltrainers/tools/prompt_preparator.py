@@ -73,7 +73,7 @@ def prep_prompt_for_generate_protocols(payload) -> str:
         # Se è già un dizionario
         data = payload
 
-    user_level = data['train_target']
+    user_level = data['level']
     # TODO: add workout goals like: increase mass, increase strenght etc for a more precise protocol generation
     
     return user_level
