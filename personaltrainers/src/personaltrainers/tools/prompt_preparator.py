@@ -59,3 +59,21 @@ def prep_prompt_for_select_exercises(payload) -> str:
     prompt += f"The duration of the training program is {data['duration_minutes']} minutes"
     
     return prompt
+
+
+def prep_prompt_for_generate_protocols(payload) -> str:
+    # Converti l'oggetto Pydantic in dizionario se necessario
+    if hasattr(payload, 'model_dump'):
+        # Pydantic v2
+        data = payload.model_dump()
+    elif hasattr(payload, 'dict'):
+        # Pydantic v1
+        data = payload.dict()
+    else:
+        # Se è già un dizionario
+        data = payload
+
+    user_level = data['train_target']
+    # TODO: add workout goals like: increase mass, increase strenght etc for a more precise protocol generation
+    
+    return user_level

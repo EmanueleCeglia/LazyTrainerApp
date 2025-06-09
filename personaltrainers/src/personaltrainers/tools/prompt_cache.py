@@ -54,6 +54,7 @@ def _save_cache(cache: Dict[str, str], path: Path) -> None:
 def cached_call(
     prompt_1: str,
     prompt_2: str,
+    prompt_3: str,
     model_fn: Callable[[str], str],
     cache_path: Path | str = "prompt_cache.json",
 ) -> str:
@@ -88,7 +89,7 @@ def cached_call(
             return cache[key]
 
     # ---- Cache miss: call the model -------------------------------------- #
-    response = model_fn(prompt_1, prompt_2)
+    response = model_fn(prompt_1, prompt_2, prompt_3)
 
     # ---- Persist result --------------------------------------------------- #
     with _LOCK:
