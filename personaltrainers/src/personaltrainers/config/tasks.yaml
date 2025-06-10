@@ -177,3 +177,8 @@ generate_protocols:
     ]'
 
   agent: protocols_generator
+
+# TODO: NEXT FEATURES TO IMPLEMENT
+# Definire che tipo di allenamento si vuole fare: mass, strenght, mantainance 
+# Inserire un pulsante per reshuffling dei metodi di allenamento
+# Le metodologie di allenamento sono troppo statiche, aumentare temperatura
