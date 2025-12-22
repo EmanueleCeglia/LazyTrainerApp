@@ -1,0 +1,46 @@
+# --- Python & Backend ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments (CRITICAL)
+venv/
+env/
+.env
+.venv/
+
+# Environment Variables (Secrets)
+.env
+.env.*
+!.env.example
+
+# Database
+*.sqlite3
+*.db
+backend/postgres_data/  # Ignore local DB volume if mapped locally
+
+# Logs
+*.log
+
+# --- VS Code & Editor ---
+.vscode/
+.idea/
+*.swp
+
+# --- Docker ---
+docker-compose.override.yml
+
+# --- Flutter (Standard Ignores) ---
+frontend/build/
+frontend/.dart_tool/
+frontend/.packages
+frontend/.pub/
+frontend/pubspec.lock
+frontend/ios/Flutter/Generated.xcconfig
+frontend/ios/Flutter/app.flx
+frontend/ios/Flutter/app.zip
+frontend/ios/Flutter/flutter_assets/
+frontend/ios/ServiceDefinitions.json
+frontend/ios/Runner/GeneratedPluginRegistrant.*
+frontend/android/local.properties

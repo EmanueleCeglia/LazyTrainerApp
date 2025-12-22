@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  db:
+    image: ankane/pgvector:latest # Usa questa versione specifica per l'AI!
+    container_name: lazytrainer_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # PgAdmin (Interfaccia web per vedere il DB)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: lazytrainer_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
