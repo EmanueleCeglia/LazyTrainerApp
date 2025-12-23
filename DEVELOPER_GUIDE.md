@@ -1,4 +1,3 @@
-
 # 📘 LazyTrainer - Developer Handbook
 
 This document serves as the primary reference for developing, running, and maintaining the LazyTrainer backend and infrastructure.
@@ -74,9 +73,52 @@ alembic current
 
 ```
 
+### D. Hard Reset (Fix Corrupted State)
+
+If you delete tables manually or mess up the migration history, you must reset Alembic's memory:
+
+1. Open PgAdmin Query Tool.
+2. Run: `DROP TABLE IF EXISTS alembic_version;` (and drop any other tables you want to reset).
+3. Re-run migrations: `alembic upgrade head`
+
 ---
 
-## 🚀 3. Running the Server
+## 🌱 3. Data Seeding (Populating the DB)
+
+To fill the database with initial exercises.
+
+### A. Run with Real AI Embeddings (Recommended)
+
+You need to set the API Key temporarily in your terminal session before running the script.
+
+**Windows (PowerShell):**
+
+```powershell
+$env:OPENAI_API_KEY="sk-YOUR-KEY-HERE"
+python -m src.scripts.seed_db
+
+```
+
+**Mac/Linux:**
+
+```bash
+export OPENAI_API_KEY="sk-YOUR-KEY-HERE"
+python -m src.scripts.seed_db
+
+```
+
+### B. Run with Dummy Data (No API Key)
+
+The script will auto-detect the missing key and insert zero-vectors (app works, but semantic search won't).
+
+```bash
+python -m src.scripts.seed_db
+
+```
+
+---
+
+## 🚀 4. Running the Server
 
 To start the FastAPI server with **hot-reload** (updates automatically when you save code):
 
@@ -91,29 +133,22 @@ uvicorn src.main:app --reload
 
 ---
 
-## 🐳 4. Infrastructure (Docker)
+## 🐳 5. Infrastructure (Docker)
 
 To manage the PostgreSQL database container.
 
-* **Start Database:**
-```bash
-docker-compose up -d
+* **Start Database:** `docker-compose up -d`
+* **Stop Database:** `docker-compose down`
+* **View Logs:** `docker logs lazytrainer_db`
 
-```
+### 🖥️ PgAdmin (Visual Interface)
 
-
-* **Stop Database:**
-```bash
-docker-compose down
-
-```
-
-
-* **View Logs:**
-```bash
-docker logs lazytrainer_db
-
-```
+* **URL:** `http://localhost:5050`
+* **Login:** `admin@admin.com` / `admin`
+* **Connect to Server:**
+* Host: `db`
+* Username: `postgres`
+* Password: `password`
 
 
 
@@ -128,36 +163,17 @@ docker exec -it lazytrainer_db psql -U postgres -c "CREATE EXTENSION IF NOT EXIS
 
 ---
 
-## 📦 5. Dependency Management
+## 📦 6. Dependency Management
 
 We use `pip` to manage Python packages.
 
-* **Install a new package:**
-```bash
-pip install package_name
-
-```
-
-
-* **Save dependencies (IMPORTANT):**
-After installing anything, update the requirements file:
-```bash
-pip freeze > requirements.txt
-
-```
-
-
-* **Install from requirements (New setup):**
-```bash
-pip install -r requirements.txt
-
-```
-
-
+* **Install a new package:** `pip install package_name`
+* **Save dependencies:** `pip freeze > requirements.txt`
+* **Install from requirements:** `pip install -r requirements.txt`
 
 ---
 
-## 📂 6. Project Structure Reference
+## 📂 7. Project Structure Reference
 
 ```text
 backend/
@@ -170,6 +186,8 @@ backend/
 │   ├── database/           
 │   │   ├── connection.py   # DB Session Management
 │   │   └── models.py       # SQL Tables Definitions
+│   ├── scripts/            # Utility scripts (Seeding, etc.)
+│   │   └── seed_db.py      # Database populator
 │   └── main.py             # App Entry Point (Router wiring)
 ├── alembic.ini             # Alembic Config
 └── requirements.txt        # Dependencies
