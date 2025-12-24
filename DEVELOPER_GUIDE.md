@@ -17,10 +17,17 @@ This document serves as the primary reference for developing, running, and maint
     source backend/venv/bin/activate
     ```
 
-### Troubleshooting
-If you see a "Script execution disabled" error on Windows:
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+### 🔐 1.1 Configuration (.env)
+We use a `.env` file to manage secrets. **Never commit this file to GitHub.**
+Create a file named `.env` inside `backend/` with the following content:
+
+```ini
+# Database Connection
+DATABASE_URL=postgresql+psycopg2://postgres:password@localhost:5432/postgres
+
+# AI Provider (OpenAI)
+OPENAI_API_KEY=sk-proj-YOUR_KEY_HERE
+OPENAI_MODEL_NAME=gpt-4o
 
 ```
 
@@ -43,7 +50,7 @@ alembic revision --autogenerate -m "Describe your change here"
 
 3. **🔍 CRITICAL: Review the File**
 * Go to `backend/alembic/versions/` and open the new file.
-* **Check imports:** If the change involves vectors, ensure `import pgvector` is present at the top.
+* **Check imports:** If the change involves vectors, ensure `import pgvector` is present.
 * **Check logic:** Ensure the SQL commands look correct.
 
 
@@ -55,31 +62,15 @@ alembic upgrade head
 
 
 
-### B. Undo Changes
+### B. Undo/Reset Changes
 
-If a migration breaks the app, you can roll back the database to the previous state:
-
-```bash
-alembic downgrade -1
-
-```
-
-### C. Check Status
-
-To see which migration revision the database is currently on:
-
-```bash
-alembic current
-
-```
-
-### D. Hard Reset (Fix Corrupted State)
-
-If you delete tables manually or mess up the migration history, you must reset Alembic's memory:
-
+* **Undo last migration:** `alembic downgrade -1`
+* **Hard Reset (If corrupted):**
 1. Open PgAdmin Query Tool.
-2. Run: `DROP TABLE IF EXISTS alembic_version;` (and drop any other tables you want to reset).
-3. Re-run migrations: `alembic upgrade head`
+2. Run: `DROP TABLE IF EXISTS alembic_version;` (plus other tables like `exercises`).
+3. Re-run: `alembic upgrade head`
+
+
 
 ---
 
@@ -89,7 +80,7 @@ To fill the database with initial exercises.
 
 ### A. Run with Real AI Embeddings (Recommended)
 
-You need to set the API Key temporarily in your terminal session before running the script.
+You need to set the API Key temporarily in your terminal session before running the script (or ensure it's in your `.env` file).
 
 **Windows (PowerShell):**
 
@@ -107,20 +98,11 @@ python -m src.scripts.seed_db
 
 ```
 
-### B. Run with Dummy Data (No API Key)
-
-The script will auto-detect the missing key and insert zero-vectors (app works, but semantic search won't).
-
-```bash
-python -m src.scripts.seed_db
-
-```
-
 ---
 
 ## 🚀 4. Running the Server
 
-To start the FastAPI server with **hot-reload** (updates automatically when you save code):
+To start the FastAPI server with **hot-reload**:
 
 ```bash
 cd backend
@@ -135,8 +117,6 @@ uvicorn src.main:app --reload
 
 ## 🐳 5. Infrastructure (Docker)
 
-To manage the PostgreSQL database container.
-
 * **Start Database:** `docker-compose up -d`
 * **Stop Database:** `docker-compose down`
 * **View Logs:** `docker logs lazytrainer_db`
@@ -145,29 +125,13 @@ To manage the PostgreSQL database container.
 
 * **URL:** `http://localhost:5050`
 * **Login:** `admin@admin.com` / `admin`
-* **Connect to Server:**
-* Host: `db`
-* Username: `postgres`
-* Password: `password`
-
-
-
-### Database Troubleshooting
-
-If you get a `type "vector" does not exist` error, run this to force enable the extension:
-
-```powershell
-docker exec -it lazytrainer_db psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
-
-```
+* **Connect:** Host: `db` | User: `postgres` | Pass: `password`
 
 ---
 
 ## 📦 6. Dependency Management
 
-We use `pip` to manage Python packages.
-
-* **Install a new package:** `pip install package_name`
+* **Install package:** `pip install package_name`
 * **Save dependencies:** `pip freeze > requirements.txt`
 * **Install from requirements:** `pip install -r requirements.txt`
 
@@ -180,16 +144,44 @@ backend/
 ├── alembic/                # Migration scripts
 ├── src/
 │   ├── api/                
-│   │   ├── routes.py       # API Endpoints (GET, POST)
-│   │   └── schemas.py      # Data Models (Pydantic)
-│   ├── crew/               # AI Agents & Logic
+│   │   ├── routes.py       # Endpoints (User Profile -> AI Trigger)
+│   │   └── schemas.py      # Pydantic Models (Request/Response)
+│   ├── crew/               # 🧠 THE BRAIN (AI Logic)
+│   │   ├── agents.py       # Definition of Agents (Roles, Backstory)
+│   │   ├── tasks.py        # Definition of Tasks (Instructions)
+│   │   ├── tools.py        # Custom Tools (SQL/Vector Search Logic)
+│   │   └── main.py         # Orchestrator (Crew runner)
 │   ├── database/           
-│   │   ├── connection.py   # DB Session Management
-│   │   └── models.py       # SQL Tables Definitions
-│   ├── scripts/            # Utility scripts (Seeding, etc.)
+│   │   ├── connection.py   # DB Session
+│   │   └── models.py       # SQL Tables
+│   ├── scripts/            # Utility scripts
 │   │   └── seed_db.py      # Database populator
-│   └── main.py             # App Entry Point (Router wiring)
+│   └── main.py             # App Entry Point
+├── .env                    # Secrets (API Keys) - NOT IN GIT
 ├── alembic.ini             # Alembic Config
 └── requirements.txt        # Dependencies
+
+```
+
+---
+
+## 🧠 8. AI & Agents Troubleshooting
+
+### Common Issues
+
+* **"Action Input is not a valid key..."**:
+* *Cause:* The Agent sent a complex Python object (List/Dict) to a Tool that expects a String.
+* *Fix:* Simplify the Tool's input schema in `tools.py` (e.g., ask for comma-separated strings).
+
+
+* **"Context Window Exceeded"**:
+* *Cause:* The Agent retrieved too many exercises or the history is too long.
+* *Fix:* Reduce the `limit` in `ExerciseRetrieverTool` or clean up the `backstory`.
+
+
+* **Agent Hallucinations (Inventing Exercises)**:
+* *Fix:* Reinforce the prompt in `agents.py` with: "You must ONLY use the provided tool. Do not guess."
+
+
 
 ```
