@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 DATABASE_URL = "postgresql+psycopg2://postgres:password@localhost:5432/postgres"
 
 # 2. The Engine (The actual connection)
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, echo=True)
 
 # 3. The Session Factory (Creates a temporary workspace for each request)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
