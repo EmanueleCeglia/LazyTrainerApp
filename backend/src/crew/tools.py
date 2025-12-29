@@ -26,7 +26,7 @@ class ExerciseRetrieverTool(BaseTool):
         client = OpenAI()
         
         try:
-            # --- 1. CLEAN INPUTS ---
+            # --- 1. CLEANING HELPER ---
             def parse_list(input_data):
                 if not input_data: return []
                 if isinstance(input_data, list):
@@ -36,13 +36,23 @@ class ExerciseRetrieverTool(BaseTool):
                     return [i.strip() for i in clean.split(',') if i.strip()]
                 return []
 
-            equipment_list = parse_list(available_equipment)
+            raw_equipment = parse_list(available_equipment)
             injuries_list = parse_list(user_injuries)
             zones_list = parse_list(target_zone)
             forces_list = parse_list(force_type)
 
+            # --- 🛡️ BASIC NORMALIZATION ONLY ---
+            # We trust the App to send correct names (e.g., "Dumbbell"), but we ensure Title Case for DB matching.
+            final_equipment = [item.title() for item in raw_equipment]
+            
+            # Auto-add "Bodyweight" because user bodies are always available.
+            # This ensures exercises like "Lunges" (requiring Dumbbell + Bodyweight) don't get filtered out.
+            if "Bodyweight" not in final_equipment:
+                final_equipment.append("Bodyweight")
+
             print(f"\n🔍 SEARCH: '{query}'")
-            print(f"   Equip: {equipment_list} | Zone: {zones_list}")
+            print(f"   User Has: {final_equipment}")
+            print(f"   Filters: Zone={zones_list} | Force={forces_list}")
 
             # --- 2. EMBEDDINGS ---
             response = client.embeddings.create(input=query, model="text-embedding-3-small")
@@ -58,41 +68,45 @@ class ExerciseRetrieverTool(BaseTool):
             if injuries_list:
                 sql_query = sql_query.filter(~cast(Exercise.contraindications, ARRAY(VARCHAR)).op('&&')(cast(injuries_list, ARRAY(VARCHAR))))
             
-            # The Critical Equipment Filter
-            if equipment_list:
+            # --- CRITICAL FILTER: SUBSET LOGIC ---
+            # Logic: "Is the Exercise's required equipment a SUBSET of what the User has?"
+            # Example: 
+            #   User: [Dumbbell, Barbell, Bodyweight]
+            #   Ex1: [Dumbbell] -> PASS
+            #   Ex2: [Barbell] -> PASS
+            #   Ex3: [Dumbbell, Barbell] -> PASS
+            #   Ex4: [Cable] -> FAIL
+            if final_equipment:
                 sql_query = sql_query.filter(
-                    cast(Exercise.equipment, ARRAY(VARCHAR)).op('<@')(cast(equipment_list, ARRAY(VARCHAR)))
+                    cast(Exercise.equipment, ARRAY(VARCHAR)).op('<@')(cast(final_equipment, ARRAY(VARCHAR)))
                 )
 
             sql_query = sql_query.order_by(Exercise.embedding.cosine_distance(query_vector))
-            results = sql_query.limit(10).all() # Increased limit to ensure we get hits
+            results = sql_query.limit(10).all()
 
             if not results:
-                return "No exercises found matching criteria."
+                return (
+                    f"No exercises found. \n"
+                    f"User Equipment: {final_equipment}\n"
+                    f"Filters: Zone={zones_list}, Force={forces_list}"
+                )
 
-            # --- 4. FORMAT OUTPUT (WITH SANITIZER) ---
+            # --- 4. FORMAT OUTPUT ---
             output_text = f"Found {len(results)} exercises:\n"
             
             for ex in results:
-                # 🛡️ THE SANITIZER: Check if equipment is broken (list of chars)
-                # If ex.equipment looks like ['{', 'B', 'a', 'r'...], we fix it.
+                # 🛡️ Sanitizer for "List of Chars" bug (Safety net)
                 equip_display = ex.equipment
-                
-                # Check for the "List of Chars" bug
                 if isinstance(equip_display, list) and len(equip_display) > 0 and (equip_display[0] == '{' or len(equip_display[0]) == 1):
-                     # Re-join characters: ['{', 'B', 'a', 'r', 'b', 'e', 'l', 'l', '}'] -> "{Barbell}"
                      raw_str = "".join(equip_display)
-                     # Clean syntax: "{Barbell}" -> "Barbell"
                      clean_str = raw_str.replace('{', '').replace('}', '').replace('"', '')
-                     # Split back to list: "Barbell,Bench" -> ["Barbell", "Bench"]
                      equip_display = clean_str.split(',')
 
-                # Format nicely
                 equip_str = ", ".join(equip_display) if isinstance(equip_display, list) else str(equip_display)
 
                 output_text += f"NAME: {ex.name}\n"
                 output_text += f"ZONE: {ex.target_zone} | TYPE: {ex.force_type}\n"
-                output_text += f"EQUIPMENT: {equip_str}\n" # <--- Using sanitized string
+                output_text += f"EQUIPMENT: {equip_str}\n"
                 output_text += f"INSTRUCTIONS: {ex.instructions[:100]}...\n"
                 output_text += "---\n"
             
