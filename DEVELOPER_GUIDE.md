@@ -67,7 +67,7 @@ alembic upgrade head
 * **Undo last migration:** `alembic downgrade -1`
 * **Hard Reset (If corrupted):**
 1. Open PgAdmin Query Tool.
-2. Run: `DROP TABLE IF EXISTS alembic_version;` (plus other tables like `exercises`).
+2. Run: `DROP TABLE IF EXISTS alembic_version;` (plus other tables like `exercises`, `workout_plans`).
 3. Re-run: `alembic upgrade head`
 
 
@@ -144,16 +144,17 @@ backend/
 ├── alembic/                # Migration scripts
 ├── src/
 │   ├── api/                
-│   │   ├── routes.py       # Endpoints (User Profile -> AI Trigger)
-│   │   └── schemas.py      # Pydantic Models (Request/Response)
-│   ├── crew/               # 🧠 THE BRAIN (AI Logic)
-│   │   ├── agents.py       # Definition of Agents (Roles, Backstory)
-│   │   ├── tasks.py        # Definition of Tasks (Instructions)
-│   │   ├── tools.py        # Custom Tools (SQL/Vector Search Logic)
-│   │   └── main.py         # Orchestrator (Crew runner)
+│   │   ├── routes.py       # API Endpoints (Creation, Swapping, Modifying)
+│   │   └── schemas.py      # Pydantic Models (Input/Output Validation)
+│   ├── crew/               # 🧠 THE BRAIN (Multi-Agent System)
+│   │   ├── agents.py       # The Trio: Strategist, Selector, Coach
+│   │   ├── tasks.py        # Pipeline: Strategy -> Selection -> Coaching
+│   │   ├── tools.py        # ExerciseRetrieverTool (SQL + Vector Search)
+│   │   ├── main.py         # Orchestrator (Full Plan Generation)
+│   │   └── modifier.py     # Specialized Runner (Swap & Adjust features)
 │   ├── database/           
 │   │   ├── connection.py   # DB Session
-│   │   └── models.py       # SQL Tables
+│   │   └── models.py       # SQL Tables (Exercise, UserProfile, WorkoutPlan)
 │   ├── scripts/            # Utility scripts
 │   │   └── seed_db.py      # Database populator
 │   └── main.py             # App Entry Point
@@ -165,7 +166,31 @@ backend/
 
 ---
 
-## 🧠 8. AI & Agents Troubleshooting
+## ⚙️ 8. Core Workflows & Logic
+
+### A. The 3-Agent Architecture (Creation)
+
+When `/generate` is called, a **Crew** of 3 agents executes sequentially:
+
+1. **Strategist:** Analyzes User Profile → Outputs a "Weekly Skeleton" (Patterns, not exercises).
+2. **Selector:** Takes Skeleton + Equipment → Queries DB → Outputs Specific Exercises.
+3. **Coach:** Takes Exercises → Applies Science (Sets/Reps) → Formats JSON.
+
+### B. The Modifier System (Adaptation)
+
+For small changes, we do NOT run the full crew. We use `src/crew/modifier.py`.
+
+* **Swap Exercise (`PUT /swap`):** Uses a specialized **Selector Agent** to find a biomechanical equivalent (e.g., Lat Pulldown → Pull-up) within the JSON structure.
+* **Adjust Difficulty (`PUT /adjust`):** Uses a specialized **Coach Agent** to rewrite Sets/Reps/Methods (e.g., 3x10 → 5x5) without changing the exercise list.
+
+### C. Progression (The "Next" Block)
+
+* **Endpoint:** `POST /generate/next`
+* **Logic:** Reads the *previous* `WorkoutPlan` from the database, summarizes it, reads User Feedback, and feeds this history into the **Strategist** to evolve the program (Progressive Overload).
+
+---
+
+## 🧠 9. AI & Agents Troubleshooting
 
 ### Common Issues
 
@@ -181,6 +206,11 @@ backend/
 
 * **Agent Hallucinations (Inventing Exercises)**:
 * *Fix:* Reinforce the prompt in `agents.py` with: "You must ONLY use the provided tool. Do not guess."
+
+
+* **Swap Feature Returns 400/Null**:
+* *Cause:* Case sensitivity in PostgreSQL. "Pull-up Bar" vs "Pull-Up Bar".
+* *Fix:* Ensure `tools.py` has the `EQUIPMENT_MAPPING` normalization dictionary active.
 
 
 
