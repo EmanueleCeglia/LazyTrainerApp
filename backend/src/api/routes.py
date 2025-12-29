@@ -7,6 +7,9 @@ from src.api.schemas import UserProfileRequest, WorkoutPlanResponse
 from src.crew.main import WorkoutCrew
 from src.database.connection import get_db
 from src.database.models import WorkoutPlan
+from src.crew.modifier import WorkoutModifier 
+from src.api.schemas import ExerciseSwapRequest
+from src.api.schemas import DifficultyModificationRequest
 
 router = APIRouter()
 
@@ -87,3 +90,141 @@ def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db))
     except Exception as e:
         print(f"❌ ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.put("/plans/{plan_id}/swap")
+def swap_exercise(plan_id: str, request: ExerciseSwapRequest, db: Session = Depends(get_db)):
+    # 1. Fetch Plan
+    plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    print(f"🔄 SWAPPING: {request.current_exercise_name} on {request.day_name}")
+
+    # 2. Run AI
+    try:
+        modifier = WorkoutModifier(request)
+        result_raw = modifier.find_substitute()
+        new_exercise_json = clean_json_string(str(result_raw))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Critical Error: {str(e)}")
+
+    # 🛑 GUARD CLAUSE (The Fix)
+    if not new_exercise_json or "error" in new_exercise_json or not new_exercise_json.get("name"):
+        print(f"❌ SWAP FAILED. AI Output: {new_exercise_json}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Could not find a valid substitute for {request.current_exercise_name}. AI Response: {new_exercise_json.get('raw_content', 'Invalid JSON')}"
+        )
+
+    # 3. Update Logic (Only proceeds if we have a valid name)
+    current_schedule = dict(plan.schedule)
+    day_found = False
+    
+    for week_key, week_data in current_schedule.items():
+        if request.day_name in week_data:
+            day_data = week_data[request.day_name]
+            exercises = day_data.get("exercises", [])
+            
+            for i, ex in enumerate(exercises):
+                if ex.get("name") == request.current_exercise_name:
+                    # Merge Old Data with New Data
+                    merged_exercise = {
+                        "name": new_exercise_json.get("name"), # Guaranteed not null now
+                        "sets": new_exercise_json.get("sets", ex.get("sets")),
+                        "reps": new_exercise_json.get("reps", ex.get("reps")),
+                        "rest": new_exercise_json.get("rest", ex.get("rest")),
+                        "notes": new_exercise_json.get("notes", f"Swapped from {request.current_exercise_name}")
+                    }
+                    
+                    exercises[i] = merged_exercise
+                    day_found = True
+                    break
+        if day_found: break
+
+    if not day_found:
+        raise HTTPException(status_code=404, detail=f"Exercise '{request.current_exercise_name}' not found in {request.day_name}")
+
+    # 4. Save
+    plan.schedule = current_schedule
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(plan, "schedule") 
+    db.commit()
+    
+    return {
+        "status": "success", 
+        "message": f"Swapped {request.current_exercise_name} for {new_exercise_json.get('name')}",
+        "new_exercise": merged_exercise
+    }
+
+@router.put("/plans/{plan_id}/adjust")
+def adjust_difficulty(plan_id: str, request: DifficultyModificationRequest, db: Session = Depends(get_db)):
+    # 1. Fetch Plan
+    plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    print(f"🎛️ ADJUSTING: {request.modification_type} for {request.day_name}")
+
+    # 2. Extract the Target Exercises
+    current_schedule = dict(plan.schedule)
+    exercises_to_modify = []
+    
+    # Helper to find the day data
+    day_data = None
+    for week in current_schedule.values():
+        if request.day_name in week:
+            day_data = week[request.day_name]
+            break
+            
+    if not day_data:
+        raise HTTPException(status_code=404, detail=f"{request.day_name} not found in plan")
+
+    all_exercises = day_data.get("exercises", [])
+    
+    # Filter: If target_names provided, select only those. Else, select ALL.
+    if request.target_exercise_names:
+        exercises_to_modify = [ex for ex in all_exercises if ex['name'] in request.target_exercise_names]
+    else:
+        exercises_to_modify = all_exercises
+
+    if not exercises_to_modify:
+        raise HTTPException(status_code=404, detail="No matching exercises found to modify")
+
+    # 3. Run AI Modifier
+    try:
+        modifier = WorkoutModifier(request)
+        # Pass ONLY the specific exercises we want to change
+        result_raw = modifier.adjust_difficulty(exercises_to_modify)
+        modified_list = clean_json_string(str(result_raw))
+        
+        # Validation: Ensure we got a list back
+        if isinstance(modified_list, dict): 
+            # Sometimes LLM wraps list in {"exercises": [...]}
+            modified_list = modified_list.get("exercises", [modified_list])
+        if not isinstance(modified_list, list):
+            modified_list = [modified_list]
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Error: {str(e)}")
+
+    # 4. Merge Back (The Surgery)
+    # We iterate through the original list and swap in the modified versions
+    updated_count = 0
+    for new_ex in modified_list:
+        for i, old_ex in enumerate(all_exercises):
+            if old_ex["name"] == new_ex["name"]:
+                all_exercises[i] = new_ex # Replace with new parameters
+                updated_count += 1
+    
+    # 5. Save
+    plan.schedule = current_schedule
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(plan, "schedule") 
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": f"Updated {updated_count} exercises.",
+        "modified_exercises": modified_list
+    }
