@@ -1,23 +1,26 @@
 # 🏋️‍♂️ LazyTrainer - AI-Powered Personal Training Agent
 
-> **Status:** 🚧 In Development (Backend AI Integration Phase)
+> **Status:** 🚀 Backend Complete | 🚧 Phase 3: Frontend (Flutter) Development
 
-**LazyTrainer** is a State-of-the-Art (SoTA) application designed to generate hyper-personalized training programs. Unlike standard fitness apps that rely on static templates, LazyTrainer uses an **Agentic AI** architecture to analyze user biomechanics, injuries, and goals, retrieving verified exercises from a vector database to build safe, effective routines.
+**LazyTrainer** is a State-of-the-Art (SoTA) application designed to generate hyper-personalized training programs. Unlike standard fitness apps that rely on static templates, LazyTrainer uses a **Multi-Agent AI** architecture to analyze user biomechanics, injuries, and training history, retrieving verified exercises from a vector database to build safe, effective, and evolving routines.
 
 ---
 
 ## 🏗️ Architecture
 
-The system utilizes an **Asynchronous Event-Driven Architecture** combined with **Hybrid RAG** (Semantic + SQL filtering) to ensure high-quality outputs.
+The system utilizes an **Asynchronous Event-Driven Architecture** combined with **Neuro-Symbolic AI** (LLM Logic + SQL Strictness).
 
 ```mermaid
 graph LR
-    A[Flutter App] -->|Request| B(FastAPI Backend)
-    B -->|Async Task| C{CrewAI Orchestrator}
-    C -->|Hybrid Search| D[(PostgreSQL + pgvector)]
-    D -->|Context| C
-    C -->|JSON Program| B
-    B -->|WebSocket| A
+    A[Flutter App] <-->|HTTP/REST| B(FastAPI Backend)
+    B <-->|Read/Write| D[(PostgreSQL + pgvector)]
+    
+    subgraph "The AI Brain (CrewAI)"
+        S[Strategist Agent] -->|Split & Volume| L[Selector Agent]
+        L -->|Exercise Search| D
+        L -->|Exercise List| C[Coach Agent]
+        C -->|Sets/Reps/JSON| B
+    end
 
 ```
 
@@ -32,23 +35,35 @@ graph LR
 * **AI Orchestrator:** CrewAI (Multi-Agent Systems)
 * **Containerization:** Docker & Docker Compose
 
-### Frontend (Planned)
+### Frontend (Upcoming)
 
 * **Framework:** Flutter (Dart)
 * **State Management:** Riverpod
-* **Communication:** WebSockets (Real-time agent feedback)
+* **Communication:** REST API
 
 ---
 
 ## ⚡ Features
 
+### Core Infrastructure
+
 * [x] **Dockerized Environment:** One-command setup for Database and Services.
 * [x] **Vector Database:** Schema designed for semantic search of exercises (RAG).
 * [x] **Smart Data Seeding:** Automated script to populate DB with biomechanics metadata & embeddings.
-* [x] **Clean Architecture:** Modular code structure (`api`, `crew`, `database`, `scripts`).
 * [x] **Database Migrations:** Version control for the DB schema using Alembic.
-* [x] **Agentic Workflow:** "Biomechanics" agent capable of querying the DB for safe exercises.
-* [ ] **Mobile Interface:** iOS/Android app.
+
+### AI & Agents (The "Brain")
+
+* [x] **Multi-Agent Crew:** Specialized agents for Strategy (Split), Selection (Exercises), and Coaching (Math).
+* [x] **Hallucination Guardrails:** Strict SQL-based tools ensure the AI cannot invent non-existent exercises.
+* [x] **Contextual Equipment Merging:** Deterministic logic handles "Gym" vs "Park" vs "Home" equipment availability.
+
+### Lifecycle Management (The "Trainer")
+
+* [x] **Persistence:** Workout plans are saved as structured JSONB for historical tracking.
+* [x] **Exercise Swapping:** "Swap" endpoint uses AI to find biomechanical equivalents (e.g., Lat Pulldown -> Pull-up) without breaking the plan.
+* [x] **Difficulty Adjustment:** "Adjust" endpoint scales volume or changes methods (e.g., Standard -> EMOM) on the fly.
+* [x] **Progression System:** Generates *next* month's program based on the history and feedback of the *previous* block.
 
 ---
 
@@ -144,14 +159,19 @@ uvicorn src.main:app --reload
 LazyTrainerApp/
 ├── backend/
 │   ├── src/
-│   │   ├── api/          # FastAPI Routes (Endpoints) & Schemas (Pydantic)
-│   │   ├── crew/         # 🧠 THE BRAIN: Agents, Tasks, Tools
+│   │   ├── api/          # FastAPI Routes (Create, Swap, Adjust)
+│   │   ├── crew/         # 🧠 THE BRAIN: Multi-Agent Logic
+│   │   │   ├── agents.py     # Strategist, Selector, Coach definitions
+│   │   │   ├── tasks.py      # Sequential Task Pipeline
+│   │   │   ├── tools.py      # Vector Search Tool
+│   │   │   ├── main.py       # Orchestrator
+│   │   │   └── modifier.py   # Lightweight runner for Swaps/Adjustments
 │   │   ├── database/     # DB Connection & SQLAlchemy Models
 │   │   ├── scripts/      # Data Seeding & Utility Scripts
 │   │   └── main.py       # Application Entry Point
 │   ├── alembic/          # Database Migration scripts
 │   └── requirements.txt  # Python Dependencies
-├── frontend/             # Flutter Application (Coming Soon)
+├── frontend/             # Flutter Application (Under Construction)
 ├── docker-compose.yml    # Infrastructure orchestration
 └── README.md
 
