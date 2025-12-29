@@ -101,3 +101,42 @@ class WorkoutTasks:
             expected_output="A valid, raw JSON string containing the full workout program. No Markdown.",
             agent=agent
         )
+    
+    def strategy_task(self, agent, user_profile):
+        # 1. Prepare History Context (if it exists)
+        history_context = ""
+        if user_profile.get('previous_plan'):
+            history_context = f"""
+            **PREVIOUS TRAINING HISTORY (CRITICAL):**
+            The user just finished this program:
+            {user_profile['previous_plan']}
+            
+            **User Feedback on Last Block:** "{user_profile.get('feedback', 'None')}"
+            
+            **Progression Logic:**
+            - If feedback is "Too Easy": Increase Volume (Sets) or Frequency.
+            - If feedback is "Too Hard": Reduce Volume or switch to Deload.
+            - If goal changed (Hypertrophy -> Strength): Shift rep ranges completely.
+            - Do NOT simply copy the old plan. Evolve it.
+            """
+
+        return Task(
+            description=dedent(f"""
+                **Analyze the User Profile:**
+                - Days available: {user_profile['days_per_week']}
+                - Split Preference: {user_profile['split_type']}
+                - Goal: {user_profile['goals']}
+                - Experience: {user_profile['experience_level']}
+                
+                {history_context}
+
+                **Your Job:**
+                Create a Weekly Split Skeleton.
+                1. Define the focus for each day.
+                2. List the **Movement Patterns**.
+                ...
+                (Rest of the prompt remains the same)
+            """),
+            expected_output="A high-level weekly training split...",
+            agent=agent
+        )

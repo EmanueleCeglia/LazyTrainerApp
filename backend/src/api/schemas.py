@@ -51,3 +51,13 @@ class DifficultyModificationRequest(BaseModel):
     # Optional parameters
     new_method: Optional[str] = None     # e.g. "5x5", "EMOM", "Pyramid" (If null, AI picks)
     user_feedback: Optional[str] = None  # e.g. "Too easy", "I have only 30 mins", "My knees hurt"
+
+class ProgressionRequest(BaseModel):
+    user_id: str
+    previous_plan_id: str
+    user_feedback: str  # e.g., "Ready for more volume", "Knees hurt", "Switching to strength"
+    
+    # Optional overrides (if they want to change location/days for the NEW block)
+    new_goal: Optional[List[str]] = None
+    new_days_per_week: Optional[int] = None
+    new_location: Optional[str] = None

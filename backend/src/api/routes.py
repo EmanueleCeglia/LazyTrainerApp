@@ -10,6 +10,7 @@ from src.database.models import WorkoutPlan
 from src.crew.modifier import WorkoutModifier 
 from src.api.schemas import ExerciseSwapRequest
 from src.api.schemas import DifficultyModificationRequest
+from src.api.schemas import ProgressionRequest
 
 router = APIRouter()
 
@@ -228,3 +229,78 @@ def adjust_difficulty(plan_id: str, request: DifficultyModificationRequest, db: 
         "message": f"Updated {updated_count} exercises.",
         "modified_exercises": modified_list
     }
+
+@router.post("/generate/next", response_model=WorkoutPlanResponse)
+def generate_next_block(request: ProgressionRequest, db: Session = Depends(get_db)):
+    try:
+        # 1. Fetch Previous Plan
+        old_plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == request.previous_plan_id).first()
+        if not old_plan:
+            raise HTTPException(status_code=404, detail="Previous plan not found")
+
+        # 2. Re-construct User Profile
+        # We need the user's stats. In a real app, you'd fetch this from a User table.
+        # For now, we will try to infer context or require a User Profile lookup.
+        # Let's assume we can get basic stats from the User table using user_id.
+        # (Assuming you have a User model, otherwise we might need to pass stats in request)
+        
+        # simplified: We will carry over defaults from the previous plan if stored, 
+        # or realistically, you might want to pass the full profile again.
+        # To keep it simple, let's assume we use standard defaults + the history.
+        
+        # Ideally, fetch this from DB:
+        user_profile_data = {
+            "user_id": request.user_id,
+            "days_per_week": request.new_days_per_week or 4, # Fallback or Override
+            "location": request.new_location or "Gym",
+            "goals": request.new_goal or ["Hypertrophy"],
+            "equipment": [], # Will be filled by merge logic below
+            "split_type": "Multifrequency", # Default or fetch from user pref
+            "experience_level": "Intermediate",
+            "injuries": [],
+            "target_zone": ["Full Body"]
+        }
+
+        # 3. Inject History
+        # We pass a summary of the schedule to the Agent
+        user_profile_data['previous_plan'] = str(old_plan.schedule) 
+        user_profile_data['feedback'] = request.user_feedback
+
+        # 4. Merge Equipment (Same logic as /generate)
+        base_kit = LOCATION_EQUIPMENT.get(user_profile_data['location'], [])
+        user_profile_data['equipment'] = base_kit # Add user extras if you track them
+
+        print(f"📈 GENERATING PROGRESSION for User: {request.user_id}")
+        print(f"   Feedback: {request.user_feedback}")
+
+        # 5. Run the Crew
+        workout_crew = WorkoutCrew(user_profile=user_profile_data)
+        result_raw = workout_crew.run()
+        plan_json = clean_json_string(str(result_raw))
+
+        # 6. Save New Plan
+        new_plan_id = str(uuid.uuid4())
+        new_plan = WorkoutPlan(
+            id=new_plan_id,
+            user_id=request.user_id,
+            name=plan_json.get("plan_name", "Progression Block"),
+            status="Active",
+            schedule=plan_json
+        )
+        
+        # Archive the old plan? (Optional)
+        # old_plan.status = "Completed"
+        
+        db.add(new_plan)
+        db.commit()
+
+        return {
+            "status": "success",
+            "plan_id": new_plan_id,
+            "message": "Progression generated successfully.",
+            "workout_plan": json.dumps(plan_json)
+        }
+
+    except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
