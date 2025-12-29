@@ -7,26 +7,29 @@ class WorkoutCrew:
         self.user_profile = user_profile
 
     def run(self):
-        # 1. Instantiate Agents & Tasks
+        # 1. Instantiate the Factory
         agents = WorkoutAgents()
         tasks = WorkoutTasks()
 
-        coach = agents.biomechanics_coach()
-        
-        # 2. Create the specific task with user data
-        design_plan = tasks.design_plan_task(
-            agent=coach,
-            user_profile=self.user_profile
-        )
+        # 2. Summon the Agents
+        strategist = agents.strategist_agent()
+        selector = agents.exercise_selector_agent()
+        coach = agents.performance_coach_agent()
 
-        # 3. Assemble the Crew
+        # 3. Assign the Tasks
+        # The output of strategy_task automatically becomes input for selection_task, etc.
+        strategy_task = tasks.strategy_task(strategist, self.user_profile)
+        selection_task = tasks.selection_task(selector, self.user_profile)
+        coaching_task = tasks.coaching_task(coach, self.user_profile)
+
+        # 4. Assemble the Crew (The Tribunal)
         crew = Crew(
-            agents=[coach],
-            tasks=[design_plan],
-            verbose=True, # Logs the entire thinking process
-            process=Process.sequential
+            agents=[strategist, selector, coach],
+            tasks=[strategy_task, selection_task, coaching_task],
+            verbose=True,  # This will print the thought process of each agent to your console
+            process=Process.sequential # Enforce strict order: Strategy -> Selection -> Coaching
         )
 
-        # 4. Kickoff!
+        # 5. Kickoff!
         result = crew.kickoff()
         return result
