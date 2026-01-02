@@ -1,4 +1,4 @@
-from crewai import Agent, Task, Crew, Process
+from crewai import Agent, Task, Crew
 from langchain_openai import ChatOpenAI
 from src.crew.tools import ExerciseRetrieverTool
 from textwrap import dedent
@@ -7,74 +7,80 @@ class WorkoutModifier:
     def __init__(self, request_data, user_profile_equipment):
         self.data = request_data
         self.equipment = user_profile_equipment 
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
+        
+        # ⚡ OPTIMIZATION 1: Use Mini. 
+        # It is smart enough for this task and 30x cheaper.
+        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0) 
         self.tool = ExerciseRetrieverTool()
 
     def find_substitute(self):
         # 1. Define the Specialist
         selector = Agent(
             role='Exercise Replacement Specialist',
-            goal='Find the best substitute exercise respecting user constraints.',
-            backstory="You are an expert coach. You can regression/progress exercises or completely change the focus if asked.",
+            goal='Find the best substitute exercise efficiently.',
+            backstory="You are a precise database operator. You map user requests to strict SQL filters, pick the best match, and return JSON immediately.",
             verbose=True,
             tools=[self.tool],
             llm=self.llm,
-            allow_delegation=False
+            allow_delegation=False,
+            max_iter=5 # ⚡ Safety Buffer: Enough retries to fix errors, but Mini makes it cheap.
         )
 
-        # 2. Build Instructions
+        # 2. Build the "One-Shot" Strategy
+        # We pre-calculate the arguments for the AI so it doesn't have to "think" about them.
         
-        # A. Equipment & Style Logic
-        equipment_instruction = f"User has access to: {self.equipment}."
+        # A. Equipment Context
+        equipment_instruction = f"User Inventory: {self.equipment}"
         if self.data.swap_preference == "Bodyweight Only":
-            equipment_instruction += """
-            **CRITICAL OVERRIDE:** The user explicitly wants a 'Calisthenics/Bodyweight' STYLE exercise.
-            - You MAY select exercises that require a 'Pull-up Bar' or 'Dip Station' **IF AND ONLY IF** they appear in the user's access list above.
-            - If the list is empty, strictly select 'Bodyweight' (Floor/No Equipment) exercises.
-            """
-        elif self.data.swap_preference == "Machine":
-             equipment_instruction += " **CRITICAL OVERRIDE:** Prioritize MACHINE-based exercises."
+             equipment_instruction += " (Preference: Bodyweight Style. Use Bars/Dip Stations if in Inventory.)"
 
-        # B. Strategy Logic (The Decision Tree)
-        
+        # B. Construct the Search Strategy
         if self.data.target_exercise_name:
-            # Case 1: Specific Name (Highest Priority)
-            strategy_text = f"""
-            The user explicitly requested: '{self.data.target_exercise_name}'.
-            1. Search for '{self.data.target_exercise_name}'.
-            2. Check equipment (be lenient if they asked for it specifically).
-            3. Return the JSON.
+            # Case 1: Specific Name
+            decision_logic = f"""
+            **USER REQUEST:** Specific Exercise -> '{self.data.target_exercise_name}'
+            **ACTION:** 1. Call tool with `query='{self.data.target_exercise_name}'`.
+            2. Ignore zone/force filters. 
+            3. Return the result.
             """
-            
         elif self.data.new_target_zone or self.data.new_force_type:
-            # Case 2: Functional Change
+            # Case 2: Functional Change (The most complex one)
+            tgt_zone = self.data.new_target_zone if self.data.new_target_zone else "Do not filter"
+            tgt_force = self.data.new_force_type if self.data.new_force_type else "Do not filter"
             
-            strategy_text = f"""
-            The user wants to CHANGE the focus.
-            **NEW GOAL:** Find an exercise matching:
-            - Target Zone: {self.data.new_target_zone if self.data.new_target_zone else 'Any'}
-            - Force Type: {self.data.new_force_type if self.data.new_force_type else 'Any'}
-            
-            **TOOL INSTRUCTION:** Use the 'Exercise Knowledge Base' tool. 
-            Pass '{self.data.new_target_zone}' into the 'target_zone' argument.
-            Pass '{self.data.new_force_type}' into the 'force_type' argument.
+            decision_logic = f"""
+            **USER REQUEST:** Functional Swap
+            **ACTION:** Call tool with these STRICT arguments:
+            - `target_zone`: ['{self.data.new_target_zone}'] (IF '{self.data.new_target_zone}' is not None)
+            - `force_type`: ['{self.data.new_force_type}'] (IF '{self.data.new_force_type}' is not None)
+            - `query`: "Alternative for {self.data.current_exercise_name}"
+            """
+        else:
+            # Case 3: Standard Swap
+            decision_logic = f"""
+            **USER REQUEST:** Standard Substitute
+            **ACTION:** 1. Call tool with `query='Similar to {self.data.current_exercise_name}'`.
+            2. Do NOT apply strict zone/force filters unless necessary.
             """
 
-        # 3. Define Task
+        # 3. Define the Task
         task = Task(
             description=dedent(f"""
-                **Goal:** Provide a replacement exercise JSON.
+                **Goal:** Find a replacement exercise.
                 
                 **Context:**
-                - User ID: {self.data.user_id}
                 - {equipment_instruction}
                 
-                **Strategy:**
-                {strategy_text}
+                **Decision Logic:**
+                {decision_logic}
+                
+                **Failure Handling:**
+                - If the tool returns "No exercises found", REMOVE the `force_type` filter and try again with just `query`.
+                - If that fails, remove `target_zone` and search broadly.
                 
                 **Output Rules:**
                 - Return ONLY valid JSON.
-                - Format: {{ "name": "Exact Database Name", "sets": "3", "reps": "8-12", "notes": "Reason for selection..." }}
+                - Format: {{ "name": "Exact Database Name", "sets": "3", "reps": "8-12", "notes": "..." }}
             """),
             expected_output="A valid JSON object.",
             agent=selector
@@ -83,6 +89,7 @@ class WorkoutModifier:
         # 4. Run
         crew = Crew(agents=[selector], tasks=[task], verbose=True)
         return crew.kickoff()
+    
 
     def adjust_difficulty(self, current_exercises: list):
         # 1. Define the Coach (The Scientist)
