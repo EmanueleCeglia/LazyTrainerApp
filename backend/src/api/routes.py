@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from src.api.schemas import UserProfileRequest, WorkoutPlanResponse
 from src.crew.main import WorkoutCrew
 from src.database.connection import get_db
-from src.database.models import WorkoutPlan
+from src.database.models import WorkoutPlan, UserProfile
 from src.crew.modifier import WorkoutModifier 
 from src.api.schemas import ExerciseSwapRequest
 from src.api.schemas import DifficultyModificationRequest
@@ -55,6 +55,33 @@ def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db))
         user_data = request.model_dump()
         user_data['equipment'] = combined_equipment
 
+        # --- [NEW] SAVE USER CONTEXT TO DB (The "Memory") ---
+        # We use 'username' to match 'user_id' from the request
+        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
+        
+        if not user_profile:
+            # Create New Profile
+            user_profile = UserProfile(
+                username=request.user_id,
+                location=request.location, # Now storing Location
+                equipment_available=combined_equipment, # Storing the FULL list (Gym + Custom)
+                experience_level=request.experience_level,
+                goals=request.goals,
+                injuries=request.injuries
+            )
+            db.add(user_profile)
+            print(f"🆕 Created profile for {request.user_id}")
+        else:
+            # Update Existing Profile
+            user_profile.location = request.location
+            user_profile.equipment_available = combined_equipment
+            user_profile.experience_level = request.experience_level
+            user_profile.goals = request.goals
+            user_profile.injuries = request.injuries
+            print(f"♻️ Updated profile for {request.user_id}")
+            
+        db.commit() # Save immediately
+
         print(f"\n🚀 STARTING CREW for User: {request.user_id}")
         
         # --- 3. RUN AGENTS ---
@@ -74,7 +101,7 @@ def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db))
             user_id=request.user_id,
             name=plan_json.get("plan_name", "AI Generated Plan"),
             status="Active",
-            schedule=plan_json # Saving the JSON structure directly to JSONB column
+            schedule=plan_json 
         )
         
         db.add(new_plan)
@@ -85,7 +112,7 @@ def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db))
             "status": "success",
             "plan_id": plan_id,
             "message": "Workout generated and saved successfully.",
-            "workout_plan": json.dumps(plan_json) # Return stringified JSON for the schema
+            "workout_plan": json.dumps(plan_json) 
         }
 
     except Exception as e:
@@ -102,23 +129,38 @@ def swap_exercise(plan_id: str, request: ExerciseSwapRequest, db: Session = Depe
 
     print(f"🔄 SWAPPING: {request.current_exercise_name} on {request.day_name}")
 
-    # 2. Run AI
+    # --- 2. FETCH MEMORY (New Logic) ---
+    # We look up the user to see what equipment/location they possess.
+    user_profile = db.query(UserProfile).filter(UserProfile.username == plan.user_id).first()
+    
+    saved_equipment = []
+    
+    # Priority: 1. Use stored profile equipment (Best) -> 2. Default to Gym (Fallback)
+    if user_profile and user_profile.equipment_available:
+        saved_equipment = user_profile.equipment_available
+        print(f"   🧠 Memory: Found {len(saved_equipment)} items for user.")
+    else:
+        print("   ⚠️ Memory Warning: User Profile not found or empty. Defaulting to Gym context.")
+        saved_equipment = LOCATION_EQUIPMENT["Gym"]
+
+    # --- 3. Run AI with Context ---
     try:
-        modifier = WorkoutModifier(request)
+        # We pass BOTH the request and the fetched equipment to the modifier
+        modifier = WorkoutModifier(request, saved_equipment) 
         result_raw = modifier.find_substitute()
         new_exercise_json = clean_json_string(str(result_raw))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Critical Error: {str(e)}")
 
-    # 🛑 GUARD CLAUSE (The Fix)
+    # 🛑 GUARD CLAUSE
     if not new_exercise_json or "error" in new_exercise_json or not new_exercise_json.get("name"):
         print(f"❌ SWAP FAILED. AI Output: {new_exercise_json}")
         raise HTTPException(
             status_code=400, 
-            detail=f"Could not find a valid substitute for {request.current_exercise_name}. AI Response: {new_exercise_json.get('raw_content', 'Invalid JSON')}"
+            detail=f"Could not find a valid substitute. AI Response: {new_exercise_json.get('raw_content', 'Invalid JSON')}"
         )
 
-    # 3. Update Logic (Only proceeds if we have a valid name)
+    # 4. Update Logic (Remains the same)
     current_schedule = dict(plan.schedule)
     day_found = False
     
@@ -146,7 +188,7 @@ def swap_exercise(plan_id: str, request: ExerciseSwapRequest, db: Session = Depe
     if not day_found:
         raise HTTPException(status_code=404, detail=f"Exercise '{request.current_exercise_name}' not found in {request.day_name}")
 
-    # 4. Save
+    # 5. Save
     plan.schedule = current_schedule
     from sqlalchemy.orm.attributes import flag_modified
     flag_modified(plan, "schedule") 
@@ -191,10 +233,13 @@ def adjust_difficulty(plan_id: str, request: DifficultyModificationRequest, db: 
 
     if not exercises_to_modify:
         raise HTTPException(status_code=404, detail="No matching exercises found to modify")
-
+    
     # 3. Run AI Modifier
     try:
-        modifier = WorkoutModifier(request)
+        # Note: adjust_difficulty doesn't use equipment list heavily, but the class init requires it.
+        # We pass an empty list as a placeholder since we are only changing numbers, not exercises.
+        modifier = WorkoutModifier(request, []) 
+        
         # Pass ONLY the specific exercises we want to change
         result_raw = modifier.adjust_difficulty(exercises_to_modify)
         modified_list = clean_json_string(str(result_raw))
@@ -238,47 +283,38 @@ def generate_next_block(request: ProgressionRequest, db: Session = Depends(get_d
         if not old_plan:
             raise HTTPException(status_code=404, detail="Previous plan not found")
 
-        # 2. Re-construct User Profile
-        # We need the user's stats. In a real app, you'd fetch this from a User table.
-        # For now, we will try to infer context or require a User Profile lookup.
-        # Let's assume we can get basic stats from the User table using user_id.
-        # (Assuming you have a User model, otherwise we might need to pass stats in request)
+        # 2. Re-construct User Profile from DB (More reliable than re-inferring)
+        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
         
-        # simplified: We will carry over defaults from the previous plan if stored, 
-        # or realistically, you might want to pass the full profile again.
-        # To keep it simple, let's assume we use standard defaults + the history.
-        
-        # Ideally, fetch this from DB:
+        if not user_profile:
+             raise HTTPException(status_code=404, detail="User Profile not found. Cannot generate progression.")
+
+        # Build profile data for the Crew
         user_profile_data = {
             "user_id": request.user_id,
-            "days_per_week": request.new_days_per_week or 4, # Fallback or Override
-            "location": request.new_location or "Gym",
-            "goals": request.new_goal or ["Hypertrophy"],
-            "equipment": [], # Will be filled by merge logic below
-            "split_type": "Multifrequency", # Default or fetch from user pref
-            "experience_level": "Intermediate",
-            "injuries": [],
-            "target_zone": ["Full Body"]
+            "days_per_week": request.new_days_per_week or 4,
+            "location": request.new_location or user_profile.location, # Use new or stored
+            "goals": request.new_goal or user_profile.goals,
+            "equipment": user_profile.equipment_available, # Use stored equipment
+            "split_type": "Multifrequency", # Default
+            "experience_level": user_profile.experience_level,
+            "injuries": user_profile.injuries or [],
+            "target_zone": ["Full Body"] # Default or fetch
         }
-
+        
         # 3. Inject History
-        # We pass a summary of the schedule to the Agent
         user_profile_data['previous_plan'] = str(old_plan.schedule) 
         user_profile_data['feedback'] = request.user_feedback
-
-        # 4. Merge Equipment (Same logic as /generate)
-        base_kit = LOCATION_EQUIPMENT.get(user_profile_data['location'], [])
-        user_profile_data['equipment'] = base_kit # Add user extras if you track them
 
         print(f"📈 GENERATING PROGRESSION for User: {request.user_id}")
         print(f"   Feedback: {request.user_feedback}")
 
-        # 5. Run the Crew
+        # 4. Run the Crew
         workout_crew = WorkoutCrew(user_profile=user_profile_data)
         result_raw = workout_crew.run()
         plan_json = clean_json_string(str(result_raw))
 
-        # 6. Save New Plan
+        # 5. Save New Plan
         new_plan_id = str(uuid.uuid4())
         new_plan = WorkoutPlan(
             id=new_plan_id,
@@ -287,9 +323,6 @@ def generate_next_block(request: ProgressionRequest, db: Session = Depends(get_d
             status="Active",
             schedule=plan_json
         )
-        
-        # Archive the old plan? (Optional)
-        # old_plan.status = "Completed"
         
         db.add(new_plan)
         db.commit()

@@ -18,7 +18,10 @@ class UserProfileRequest(BaseModel):
     location: Literal["Home", "Gym", "Park"]
     equipment: List[str]          # e.g., ["Dumbbell", "Bench"]
     
-    # --- Program Strategy (Crucial for the Agent) ---
+    # NEW: Preference for exercise style (even in Gym)
+    exercise_preference: Literal["Mixed", "Bodyweight Only", "Weighted Preferred"] = "Mixed"
+    
+    # --- Program Strategy ---
     split_type: Literal["Monofrequency", "Multifrequency"]
     experience_level: Literal["Beginner", "Intermediate", "Advanced"]
     
@@ -34,30 +37,36 @@ class WorkoutPlanResponse(BaseModel):
 
 class ExerciseSwapRequest(BaseModel):
     user_id: str
-    target_muscle_group: str # e.g. "Legs" or "Chest" (Optional context)
-    current_exercise_name: str # The one we want to remove
-    day_name: str # e.g. "Day 1"
-    available_equipment: List[str] # Current equipment list
+    plan_id: str
+    current_exercise_name: str 
+    day_name: str 
+    
+    # 1. Specific Request (Highest Priority)
+    target_exercise_name: Optional[str] = None 
+    
+    # 2. Functional Overrides (The "What" and "How")
+    new_target_zone: Optional[Literal["Upper", "Lower", "Core", "Full Body", "Cardio"]] = None
+    
+    # NEW: Force Type Override
+    new_force_type: Optional[Literal["Push", "Pull", "Hinge", "Static", "Lunge", "Dynamic", "Squat"]] = None
+    
+    # 3. Style/Equipment Preference
+    swap_preference: Optional[Literal["Bodyweight Only", "Machine", "Free Weight"]] = None
+    
     injuries: List[str] = []
 
 class DifficultyModificationRequest(BaseModel):
     user_id: str
-    day_name: str  # e.g., "Day 1"
-    target_exercise_names: List[str] = []  # If empty, applies to the WHOLE day
-    
-    # "scaling" (Adjust sets/reps/weight) or "method" (Change style like EMOM, Supersets)
+    day_name: str  
+    target_exercise_names: List[str] = [] 
     modification_type: str 
-    
-    # Optional parameters
-    new_method: Optional[str] = None     # e.g. "5x5", "EMOM", "Pyramid" (If null, AI picks)
-    user_feedback: Optional[str] = None  # e.g. "Too easy", "I have only 30 mins", "My knees hurt"
+    new_method: Optional[str] = None 
+    user_feedback: Optional[str] = None
 
 class ProgressionRequest(BaseModel):
     user_id: str
     previous_plan_id: str
-    user_feedback: str  # e.g., "Ready for more volume", "Knees hurt", "Switching to strength"
-    
-    # Optional overrides (if they want to change location/days for the NEW block)
+    user_feedback: str
     new_goal: Optional[List[str]] = None
     new_days_per_week: Optional[int] = None
     new_location: Optional[str] = None

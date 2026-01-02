@@ -4,8 +4,25 @@ from textwrap import dedent
 class WorkoutTasks:
     
     # 1. THE STRATEGY (The Architect)
-    # Focus: Splits, Volume, Frequency. No specific exercise names yet.
+    # Focus: Splits, Volume, Frequency. Handles both New Plans and Progression.
     def strategy_task(self, agent, user_profile):
+        # --- Logic: Check for History ---
+        history_context = ""
+        if user_profile.get('previous_plan'):
+            history_context = f"""
+            **PREVIOUS TRAINING HISTORY (CRITICAL):**
+            The user just finished this program:
+            {user_profile['previous_plan']}
+            
+            **User Feedback on Last Block:** "{user_profile.get('feedback', 'None')}"
+            
+            **Progression Logic:**
+            - If feedback is "Too Easy": Increase Volume (Sets) or Frequency.
+            - If feedback is "Too Hard": Reduce Volume or switch to Deload.
+            - If goal changed (Hypertrophy -> Strength): Shift rep ranges completely.
+            - Do NOT simply copy the old plan. Evolve it.
+            """
+
         return Task(
             description=dedent(f"""
                 **Analyze the User Profile:**
@@ -14,6 +31,8 @@ class WorkoutTasks:
                 - Goal: {user_profile['goals']}
                 - Experience: {user_profile['experience_level']}
                 - Target Zones: {user_profile['target_zone']}
+
+                {history_context}
 
                 **Your Job:**
                 Create a Weekly Split Skeleton.
@@ -40,6 +59,7 @@ class WorkoutTasks:
                 **Constraints:**
                 - Location: {user_profile['location']}
                 - Equipment: {user_profile['equipment']} (Use this list STRICTLY)
+                - Preference: {user_profile.get('exercise_preference', 'Mixed')}
                 - Injuries: {user_profile['injuries']}
                 
                 **Your Job:**
@@ -47,9 +67,11 @@ class WorkoutTasks:
                 
                 **Rules:**
                 1. **STRICT DB LOOKUP:** You MUST use the 'Exercise Knowledge Base' tool for every single slot.
-                2. **No Hallucinations:** If the tool says "No results", try a broader term (e.g., change "Incline Dumbbell Press" to "Push").
-                3. **Replacement:** Replace abstract patterns ("Chest Compound") with REAL names found ("Dumbbell Bench Press").
-                4. **Filter:** Ensure the selected exercise actually exists in the tool's output.
+                2. **Respect Preference:** - If preference is "Bodyweight Only", do NOT select machines/weights even if available. 
+                   - If "Weighted Preferred", prioritize Barbells/Dumbbells over machines.
+                3. **No Hallucinations:** If the tool says "No results", try a broader term (e.g., change "Incline Dumbbell Press" to "Push").
+                4. **Replacement:** Replace abstract patterns ("Chest Compound") with REAL names found ("Dumbbell Bench Press").
+                5. **Filter:** Ensure the selected exercise actually exists in the tool's output.
             """),
             expected_output="The detailed list of actual exercises selected from the database for each day.",
             agent=agent
@@ -99,44 +121,5 @@ class WorkoutTasks:
                 }}
             """),
             expected_output="A valid, raw JSON string containing the full workout program. No Markdown.",
-            agent=agent
-        )
-    
-    def strategy_task(self, agent, user_profile):
-        # 1. Prepare History Context (if it exists)
-        history_context = ""
-        if user_profile.get('previous_plan'):
-            history_context = f"""
-            **PREVIOUS TRAINING HISTORY (CRITICAL):**
-            The user just finished this program:
-            {user_profile['previous_plan']}
-            
-            **User Feedback on Last Block:** "{user_profile.get('feedback', 'None')}"
-            
-            **Progression Logic:**
-            - If feedback is "Too Easy": Increase Volume (Sets) or Frequency.
-            - If feedback is "Too Hard": Reduce Volume or switch to Deload.
-            - If goal changed (Hypertrophy -> Strength): Shift rep ranges completely.
-            - Do NOT simply copy the old plan. Evolve it.
-            """
-
-        return Task(
-            description=dedent(f"""
-                **Analyze the User Profile:**
-                - Days available: {user_profile['days_per_week']}
-                - Split Preference: {user_profile['split_type']}
-                - Goal: {user_profile['goals']}
-                - Experience: {user_profile['experience_level']}
-                
-                {history_context}
-
-                **Your Job:**
-                Create a Weekly Split Skeleton.
-                1. Define the focus for each day.
-                2. List the **Movement Patterns**.
-                ...
-                (Rest of the prompt remains the same)
-            """),
-            expected_output="A high-level weekly training split...",
             agent=agent
         )

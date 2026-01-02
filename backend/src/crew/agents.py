@@ -4,7 +4,7 @@ from src.crew.tools import ExerciseRetrieverTool
 
 # Load the LLM (Brain)
 # We use a specific temperature (0.2) to keep the agent creative but consistent.
-llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
 
 class WorkoutAgents:
     def __init__(self):

@@ -4,64 +4,92 @@ from src.crew.tools import ExerciseRetrieverTool
 from textwrap import dedent
 
 class WorkoutModifier:
-    def __init__(self, request_data):
+    def __init__(self, request_data, user_profile_equipment):
         self.data = request_data
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+        self.equipment = user_profile_equipment 
+        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
         self.tool = ExerciseRetrieverTool()
 
     def find_substitute(self):
         # 1. Define the Specialist
         selector = Agent(
             role='Exercise Replacement Specialist',
-            goal='Find the best biomechanical substitute for a specific exercise.',
-            backstory="You are an expert at regression and progression of exercises. You find alternatives that target the same muscle group.",
+            goal='Find the best substitute exercise respecting user constraints.',
+            backstory="You are an expert coach. You can regression/progress exercises or completely change the focus if asked.",
             verbose=True,
             tools=[self.tool],
             llm=self.llm,
             allow_delegation=False
         )
 
-        # 2. Define the Task
+        # 2. Build Instructions
+        
+        # A. Equipment & Style Logic
+        equipment_instruction = f"User has access to: {self.equipment}."
+        if self.data.swap_preference == "Bodyweight Only":
+            equipment_instruction += """
+            **CRITICAL OVERRIDE:** The user explicitly wants a 'Calisthenics/Bodyweight' STYLE exercise.
+            - You MAY select exercises that require a 'Pull-up Bar' or 'Dip Station' **IF AND ONLY IF** they appear in the user's access list above.
+            - If the list is empty, strictly select 'Bodyweight' (Floor/No Equipment) exercises.
+            """
+        elif self.data.swap_preference == "Machine":
+             equipment_instruction += " **CRITICAL OVERRIDE:** Prioritize MACHINE-based exercises."
+
+        # B. Strategy Logic (The Decision Tree)
+        
+        if self.data.target_exercise_name:
+            # Case 1: Specific Name (Highest Priority)
+            strategy_text = f"""
+            The user explicitly requested: '{self.data.target_exercise_name}'.
+            1. Search for '{self.data.target_exercise_name}'.
+            2. Check equipment (be lenient if they asked for it specifically).
+            3. Return the JSON.
+            """
+            
+        elif self.data.new_target_zone or self.data.new_force_type:
+            # Case 2: Functional Change
+            
+            strategy_text = f"""
+            The user wants to CHANGE the focus.
+            **NEW GOAL:** Find an exercise matching:
+            - Target Zone: {self.data.new_target_zone if self.data.new_target_zone else 'Any'}
+            - Force Type: {self.data.new_force_type if self.data.new_force_type else 'Any'}
+            
+            **TOOL INSTRUCTION:** Use the 'Exercise Knowledge Base' tool. 
+            Pass '{self.data.new_target_zone}' into the 'target_zone' argument.
+            Pass '{self.data.new_force_type}' into the 'force_type' argument.
+            """
+
+        # 3. Define Task
         task = Task(
             description=dedent(f"""
-                **Goal:** Find a substitute for '{self.data.current_exercise_name}'.
+                **Goal:** Provide a replacement exercise JSON.
                 
                 **Context:**
-                - User Equipment: {self.data.available_equipment} (Assume 'Bodyweight' is always available)
-                - Injuries: {self.data.injuries}
+                - User ID: {self.data.user_id}
+                - {equipment_instruction}
                 
-                **Process:**
-                1. **Analyze Biomechanics:** - What represents '{self.data.current_exercise_name}'? (e.g., Lat Pulldown = Vertical Pull).
-                2. **Search Strategy:** - Use the tool to search for that PATTERN (e.g. search "Vertical Pull" or "Back").
-                   - Do NOT search for the specific exercise name "Lat Pulldown" because you already know the user can't do it.
-                3. **Selection:**
-                   - Pick the best match from the tool's output.
-                   - If user has 'Pull-up Bar', look specifically for 'Pull Up' or 'Chin Up'.
+                **Strategy:**
+                {strategy_text}
                 
                 **Output Rules:**
                 - Return ONLY valid JSON.
-                - If no exercise is found, return {{ "error": "No suitable exercise found" }}.
-                - Format: {{ "name": "Exact Database Name", "sets": "...", "reps": "...", "notes": "..." }}
+                - Format: {{ "name": "Exact Database Name", "sets": "3", "reps": "8-12", "notes": "Reason for selection..." }}
             """),
-            expected_output="A JSON object containing the new exercise details.",
+            expected_output="A valid JSON object.",
             agent=selector
         )
 
-        # 3. Run
-        crew = Crew(
-            agents=[selector],
-            tasks=[task],
-            verbose=True
-        )
-        
+        # 4. Run
+        crew = Crew(agents=[selector], tasks=[task], verbose=True)
         return crew.kickoff()
-    
+
     def adjust_difficulty(self, current_exercises: list):
         # 1. Define the Coach (The Scientist)
         coach = Agent(
             role='Adaptive Performance Coach',
             goal='Adjust training variables (Sets, Reps, Methods) based on user feedback.',
-            backstory="You are an expert in periodization. You take an existing workout and scale it up/down or change the methodology (e.g., from Standard to EMOM) without changing the exercises themselves.",
+            backstory="You are an expert in periodization. You scale workouts up/down without changing the exercises themselves.",
             verbose=True,
             llm=self.llm,
             allow_delegation=False
@@ -69,7 +97,7 @@ class WorkoutModifier:
 
         # 2. Construct the Instruction based on user intent
         if self.data.modification_type == "method":
-            method_text = f"Change the training method to: {self.data.new_method}" if self.data.new_method else "Select a different, appropriate training method (e.g. Supersets, Circuit, EMOM) to spice things up."
+            method_text = f"Change the training method to: {self.data.new_method}" if self.data.new_method else "Select a different, appropriate training method (e.g. Supersets, Circuit, EMOM)."
             instruction = f"User wants a structural change. {method_text}"
         else:
             # Scaling (Volume/Intensity)
