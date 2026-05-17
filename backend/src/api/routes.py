@@ -4,13 +4,14 @@ import re
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from src.api.schemas import UserProfileRequest, WorkoutPlanResponse
-from src.crew.main import WorkoutCrew
+from src.ai.pipeline import WorkoutPipeline, WorkoutModifier, BulkExerciseSwapper
 from src.database.connection import get_db
 from src.database.models import WorkoutPlan, UserProfile
-from src.crew.modifier import WorkoutModifier 
 from src.api.schemas import ExerciseSwapRequest
 from src.api.schemas import DifficultyModificationRequest
 from src.api.schemas import ProgressionRequest
+from src.api.schemas import RestructureRequest
+from src.api.schemas import BulkSwapRequest
 
 router = APIRouter()
 
@@ -36,7 +37,6 @@ def clean_json_string(raw_string: str) -> dict:
         clean_str = re.sub(r"```json|```", "", raw_string).strip()
         return json.loads(clean_str)
     except json.JSONDecodeError as e:
-        print(f"❌ JSON PARSING ERROR: {e}")
         print(f"   Raw Content: {raw_string}")
         # Fallback: Return a partial object so the app doesn't crash
         return {"error": "Failed to parse AI response", "raw_content": raw_string}
@@ -65,32 +65,34 @@ def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db))
                 username=request.user_id,
                 location=request.location, # Now storing Location
                 equipment_available=combined_equipment, # Storing the FULL list (Gym + Custom)
-                experience_level=request.experience_level,
                 goals=request.goals,
-                injuries=request.injuries
+                age=request.age,
+                gender=request.gender,
+                weight=request.weight,
+                height=request.height,
+                experience_level=request.experience_level
             )
             db.add(user_profile)
-            print(f"🆕 Created profile for {request.user_id}")
+            print(f"Created profile for {request.user_id}")
         else:
             # Update Existing Profile
             user_profile.location = request.location
             user_profile.equipment_available = combined_equipment
-            user_profile.experience_level = request.experience_level
             user_profile.goals = request.goals
-            user_profile.injuries = request.injuries
-            print(f"♻️ Updated profile for {request.user_id}")
+            user_profile.age = request.age
+            user_profile.gender = request.gender
+            user_profile.weight = request.weight
+            user_profile.height = request.height
+            user_profile.experience_level = request.experience_level
+            print(f"Updated profile for {request.user_id}")
             
         db.commit() # Save immediately
 
-        print(f"\n🚀 STARTING CREW for User: {request.user_id}")
+        print(f"\nSTARTING PIPELINE for User: {request.user_id}")
         
-        # --- 3. RUN AGENTS ---
-        workout_crew = WorkoutCrew(user_profile=user_data)
-        result_raw = workout_crew.run() # This returns a String
-
-        # --- 4. PARSE & SAVE ---
-        # Convert string output to real JSON
-        plan_json = clean_json_string(str(result_raw))
+        # --- 3. RUN PIPELINE ---
+        pipeline = WorkoutPipeline(user_profile=user_data, equipment=combined_equipment)
+        plan_json = pipeline.generate_plan()
         
         # Generate a unique ID for this plan
         plan_id = str(uuid.uuid4())
@@ -106,7 +108,7 @@ def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db))
         
         db.add(new_plan)
         db.commit()
-        print(f"💾 PLAN SAVED! ID: {plan_id}")
+        print(f"PLAN SAVED! ID: {plan_id}")
 
         return {
             "status": "success",
@@ -116,7 +118,7 @@ def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db))
         }
 
     except Exception as e:
-        print(f"❌ ERROR: {str(e)}")
+        print(f"ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     
 
@@ -127,7 +129,7 @@ def swap_exercise(plan_id: str, request: ExerciseSwapRequest, db: Session = Depe
     if not plan:
         raise HTTPException(status_code=404, detail="Plan not found")
 
-    print(f"🔄 SWAPPING: {request.current_exercise_name} on {request.day_name}")
+    print(f"SWAPPING: {request.current_exercise_name} on {request.day_name}")
 
     # --- 2. FETCH MEMORY (New Logic) ---
     # We look up the user to see what equipment/location they possess.
@@ -138,23 +140,22 @@ def swap_exercise(plan_id: str, request: ExerciseSwapRequest, db: Session = Depe
     # Priority: 1. Use stored profile equipment (Best) -> 2. Default to Gym (Fallback)
     if user_profile and user_profile.equipment_available:
         saved_equipment = user_profile.equipment_available
-        print(f"   🧠 Memory: Found {len(saved_equipment)} items for user.")
+        print(f"   Memory: Found {len(saved_equipment)} items for user.")
     else:
-        print("   ⚠️ Memory Warning: User Profile not found or empty. Defaulting to Gym context.")
+        print("   Memory Warning: User Profile not found or empty. Defaulting to Gym context.")
         saved_equipment = LOCATION_EQUIPMENT["Gym"]
 
     # --- 3. Run AI with Context ---
     try:
         # We pass BOTH the request and the fetched equipment to the modifier
         modifier = WorkoutModifier(request, saved_equipment) 
-        result_raw = modifier.find_substitute()
-        new_exercise_json = clean_json_string(str(result_raw))
+        new_exercise_json = modifier.find_substitute()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI Critical Error: {str(e)}")
 
     # 🛑 GUARD CLAUSE
     if not new_exercise_json or "error" in new_exercise_json or not new_exercise_json.get("name"):
-        print(f"❌ SWAP FAILED. AI Output: {new_exercise_json}")
+        print(f"SWAP FAILED. AI Output: {new_exercise_json}")
         raise HTTPException(
             status_code=400, 
             detail=f"Could not find a valid substitute. AI Response: {new_exercise_json.get('raw_content', 'Invalid JSON')}"
@@ -165,24 +166,27 @@ def swap_exercise(plan_id: str, request: ExerciseSwapRequest, db: Session = Depe
     day_found = False
     
     for week_key, week_data in current_schedule.items():
-        if request.day_name in week_data:
+        if isinstance(week_data, dict) and request.day_name in week_data:
             day_data = week_data[request.day_name]
-            exercises = day_data.get("exercises", [])
-            
-            for i, ex in enumerate(exercises):
-                if ex.get("name") == request.current_exercise_name:
-                    # Merge Old Data with New Data
-                    merged_exercise = {
-                        "name": new_exercise_json.get("name"), # Guaranteed not null now
-                        "sets": new_exercise_json.get("sets", ex.get("sets")),
-                        "reps": new_exercise_json.get("reps", ex.get("reps")),
-                        "rest": new_exercise_json.get("rest", ex.get("rest")),
-                        "notes": new_exercise_json.get("notes", f"Swapped from {request.current_exercise_name}")
-                    }
-                    
-                    exercises[i] = merged_exercise
-                    day_found = True
-                    break
+            if isinstance(day_data, dict):
+                exercises = day_data.get("exercises", [])
+                
+                for i, ex in enumerate(exercises):
+                    if ex.get("name") == request.current_exercise_name:
+                        # Merge Old Data with New Data
+                        merged_exercise = {
+                            "name": new_exercise_json.get("name"), # Guaranteed not null now
+                            "sets": new_exercise_json.get("sets", ex.get("sets")),
+                            "reps": new_exercise_json.get("reps", ex.get("reps")),
+                            "rest": new_exercise_json.get("rest", ex.get("rest")),
+                            "method": new_exercise_json.get("method", ex.get("method", "Standard")),
+                            "intensity": new_exercise_json.get("intensity", ex.get("intensity", "")),
+                            "notes": new_exercise_json.get("notes", f"Swapped from {request.current_exercise_name}")
+                        }
+                        
+                        exercises[i] = merged_exercise
+                        day_found = True
+                        break
         if day_found: break
 
     if not day_found:
@@ -207,7 +211,7 @@ def adjust_difficulty(plan_id: str, request: DifficultyModificationRequest, db: 
     if not plan:
         raise HTTPException(status_code=404, detail="Plan not found")
 
-    print(f"🎛️ ADJUSTING: {request.modification_type} for {request.day_name}")
+    print(f"ADJUSTING: {request.modification_type} for {request.day_name}")
 
     # 2. Extract the Target Exercises
     current_schedule = dict(plan.schedule)
@@ -216,7 +220,7 @@ def adjust_difficulty(plan_id: str, request: DifficultyModificationRequest, db: 
     # Helper to find the day data
     day_data = None
     for week in current_schedule.values():
-        if request.day_name in week:
+        if isinstance(week, dict) and request.day_name in week:
             day_data = week[request.day_name]
             break
             
@@ -241,8 +245,7 @@ def adjust_difficulty(plan_id: str, request: DifficultyModificationRequest, db: 
         modifier = WorkoutModifier(request, []) 
         
         # Pass ONLY the specific exercises we want to change
-        result_raw = modifier.adjust_difficulty(exercises_to_modify)
-        modified_list = clean_json_string(str(result_raw))
+        modified_list = modifier.adjust_difficulty(exercises_to_modify)
         
         # Validation: Ensure we got a list back
         if isinstance(modified_list, dict): 
@@ -289,30 +292,29 @@ def generate_next_block(request: ProgressionRequest, db: Session = Depends(get_d
         if not user_profile:
              raise HTTPException(status_code=404, detail="User Profile not found. Cannot generate progression.")
 
-        # Build profile data for the Crew
+        # Build profile data for the Pipeline
         user_profile_data = {
             "user_id": request.user_id,
             "days_per_week": request.new_days_per_week or 4,
             "location": request.new_location or user_profile.location, # Use new or stored
             "goals": request.new_goal or user_profile.goals,
             "equipment": user_profile.equipment_available, # Use stored equipment
-            "split_type": "Multifrequency", # Default
-            "experience_level": user_profile.experience_level,
-            "injuries": user_profile.injuries or [],
-            "target_zone": ["Full Body"] # Default or fetch
+            "age": user_profile.age,
+            "gender": user_profile.gender,
+            "weight": user_profile.weight,
+            "height": user_profile.height
         }
         
         # 3. Inject History
         user_profile_data['previous_plan'] = str(old_plan.schedule) 
         user_profile_data['feedback'] = request.user_feedback
 
-        print(f"📈 GENERATING PROGRESSION for User: {request.user_id}")
+        print(f"GENERATING PROGRESSION for User: {request.user_id}")
         print(f"   Feedback: {request.user_feedback}")
 
-        # 4. Run the Crew
-        workout_crew = WorkoutCrew(user_profile=user_profile_data)
-        result_raw = workout_crew.run()
-        plan_json = clean_json_string(str(result_raw))
+        # 4. Run the Pipeline
+        pipeline = WorkoutPipeline(user_profile=user_profile_data, equipment=user_profile.equipment_available)
+        plan_json = pipeline.generate_plan()
 
         # 5. Save New Plan
         new_plan_id = str(uuid.uuid4())
@@ -332,6 +334,166 @@ def generate_next_block(request: ProgressionRequest, db: Session = Depends(get_d
             "plan_id": new_plan_id,
             "message": "Progression generated successfully.",
             "workout_plan": json.dumps(plan_json)
+        }
+
+    except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/plans/{plan_id}/restructure", response_model=WorkoutPlanResponse)
+def restructure_plan(plan_id: str, request: RestructureRequest, db: Session = Depends(get_db)):
+    try:
+        # 1. Fetch Plan
+        plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
+        if not plan:
+            raise HTTPException(status_code=404, detail="Plan not found")
+            
+        # 2. Re-construct User Profile
+        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
+        if not user_profile:
+             raise HTTPException(status_code=404, detail="User Profile not found")
+
+        # 3. Extract old exercises into a pool
+        # We want the full database dict so the AI can filter by target_zone and force_type
+        # First get all the names from the current schedule
+        current_schedule = dict(plan.schedule)
+        old_exercise_names = []
+        for week in current_schedule.values():
+            if isinstance(week, dict):
+                for day_data in week.values():
+                    if isinstance(day_data, dict):
+                        for ex in day_data.get("exercises", []):
+                            old_exercise_names.append(ex.get("name"))
+                            
+        # Now fetch the full dicts from pipeline's JSON
+        # Since we just need the DB, we can instantiate an empty pipeline to read it
+        temp_pipeline = WorkoutPipeline()
+        exercise_pool = []
+        for ex in temp_pipeline.all_exercises:
+            if ex.get("name") in old_exercise_names:
+                exercise_pool.append(ex)
+
+        user_profile_data = {
+            "user_id": request.user_id,
+            "days_per_week": len([k for k, v in current_schedule.get("Week 1", {}).items() if v != "Rest" and isinstance(v, dict)]), # Keep the same active days
+            "location": user_profile.location,
+            "goals": user_profile.goals,
+            "equipment": user_profile.equipment_available,
+            "age": user_profile.age,
+            "gender": user_profile.gender,
+            "weight": user_profile.weight,
+            "height": user_profile.height,
+            "experience_level": getattr(user_profile, 'experience_level', 'Beginner')
+        }
+
+        print(f"RESTRUCTURING PLAN for User: {request.user_id} -> New Split: {request.new_split_name}")
+
+        # 4. Run the Pipeline with force_split and exercise_pool
+        pipeline = WorkoutPipeline(
+            user_profile=user_profile_data, 
+            equipment=user_profile.equipment_available,
+            force_split=request.new_split_name,
+            exercise_pool=exercise_pool
+        )
+        plan_json = pipeline.generate_plan()
+
+        # 5. Save the updated plan
+        plan.schedule = plan_json
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(plan, "schedule") 
+        db.commit()
+
+        return {
+            "status": "success",
+            "plan_id": plan.id,
+            "message": f"Plan restructured to {request.new_split_name} successfully.",
+            "workout_plan": json.dumps(plan_json)
+        }
+
+    except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/plans/{plan_id}/bulk-swap")
+def bulk_swap_exercises(plan_id: str, request: BulkSwapRequest, db: Session = Depends(get_db)):
+    try:
+        # 1. Fetch Plan
+        plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
+        if not plan:
+            raise HTTPException(status_code=404, detail="Plan not found")
+        
+        # 2. Fetch User Profile
+        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
+        if not user_profile:
+            raise HTTPException(status_code=404, detail="User Profile not found")
+        
+        equipment = user_profile.equipment_available or LOCATION_EQUIPMENT.get(user_profile.location, [])
+        goals = user_profile.goals or []
+        
+        print(f"BULK SWAP for User: {request.user_id} | {len(request.exercises)} exercises selected")
+        
+        # 3. Run the BulkExerciseSwapper agent
+        swapper = BulkExerciseSwapper(
+            equipment=equipment,
+            plan_schedule=dict(plan.schedule),
+            user_goals=goals
+        )
+        
+        exercises_dict = [item.model_dump() for item in request.exercises]
+        result = swapper.find_alternatives(exercises_dict)
+        
+        replacements = result.get("replacements", [])
+        failures = result.get("failures", [])
+        
+        if not replacements:
+            return {
+                "status": "no_changes",
+                "message": "Sorry, we couldn't find alternatives for the selected exercises.",
+                "failures": failures
+            }
+        
+        # 4. Apply replacements to the plan
+        current_schedule = dict(plan.schedule)
+        applied = 0
+        
+        for rep in replacements:
+            day_name = rep["day_name"]
+            original_name = rep["original_name"]
+            new_ex = rep["new_exercise"]
+            
+            for week_key, week_data in current_schedule.items():
+                if isinstance(week_data, dict) and day_name in week_data:
+                    day_data = week_data[day_name]
+                    if isinstance(day_data, dict):
+                        exercises = day_data.get("exercises", [])
+                        for i, ex in enumerate(exercises):
+                            if ex.get("name") == original_name:
+                                exercises[i] = {
+                                    "name": new_ex.get("name", "Unknown"),
+                                    "sets": new_ex.get("sets", "3"),
+                                    "reps": new_ex.get("reps", "10"),
+                                    "rest": new_ex.get("rest", "60s"),
+                                    "method": new_ex.get("method", "Standard"),
+                                    "intensity": new_ex.get("intensity", "RPE 7"),
+                                    "notes": new_ex.get("notes", f"Replaced {original_name}")
+                                }
+                                applied += 1
+                                break
+        
+        # 5. Save
+        plan.schedule = current_schedule
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(plan, "schedule")
+        db.commit()
+        
+        print(f"BULK SWAP COMPLETE: {applied} replaced, {len(failures)} failed")
+        
+        return {
+            "status": "success",
+            "message": f"Successfully replaced {applied} exercise(s).",
+            "workout_plan": json.dumps(current_schedule),
+            "replacements": replacements,
+            "failures": failures
         }
 
     except Exception as e:

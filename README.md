@@ -1,27 +1,27 @@
 # 🏋️‍♂️ LazyTrainer - AI-Powered Personal Training Agent
 
-> **Status:** 🚀 Backend Complete | 🚧 Phase 3: Frontend (Flutter) Development
+> **Status:** 🚀 Fully Functional | Backend + React Native Frontend
 
-**LazyTrainer** is a State-of-the-Art (SoTA) application designed to generate hyper-personalized training programs. Unlike standard fitness apps that rely on static templates, LazyTrainer uses a **Multi-Agent AI** architecture to analyze user biomechanics, injuries, and training history, retrieving verified exercises from a vector database to build safe, effective, and evolving routines.
+**LazyTrainer** is a mobile fitness application that generates hyper-personalized training programs using AI. Unlike standard fitness apps that rely on static templates, LazyTrainer uses a **Custom 3-Step LLM Pipeline** combined with a **Knowledge-Driven Rulebook** to analyze user biometrics, experience level, available equipment, and goals — then builds safe, effective, and evolving routines from a curated exercise catalog.
 
 ---
 
 ## 🏗️ Architecture
 
-The system utilizes an **Asynchronous Event-Driven Architecture** combined with **Neuro-Symbolic AI** (LLM Logic + SQL Strictness).
+The system utilizes a **Neuro-Symbolic AI** approach (LLM Creativity + Strict Python Logic + Expert Fitness Rulebook) to ensure workout plans are highly personalized and completely free of hallucinations.
 
 ```mermaid
 graph LR
-    A[Flutter App] <-->|HTTP/REST| B(FastAPI Backend)
-    B <-->|Read/Write| D[(PostgreSQL + pgvector)]
+    A[React Native App] <-->|HTTP/REST| B(FastAPI Backend)
+    B <-->|User State| D[(PostgreSQL)]
     
-    subgraph "The AI Brain (CrewAI)"
-        S[Strategist Agent] -->|Split & Volume| L[Selector Agent]
-        L -->|Exercise Search| D
-        L -->|Exercise List| C[Coach Agent]
+    subgraph "The AI Pipeline"
+        R{{fitness_rules.md}} -->|Knowledge Injection| S
+        S[Strategist LLM] -->|Weekly Skeleton| L[Selector Engine]
+        L -->|Strict Filtering| E{{exercises.json}}
+        L -->|Selected Exercises| C[Coach LLM]
         C -->|Sets/Reps/JSON| B
     end
-
 ```
 
 ## 🛠️ Tech Stack
@@ -30,15 +30,17 @@ graph LR
 
 * **Language:** Python 3.12
 * **Framework:** FastAPI (Async)
-* **Database:** PostgreSQL (with `pgvector` extension)
+* **Database:** PostgreSQL (User Profiles & Workout History)
 * **ORM:** SQLAlchemy + Alembic (Migrations)
-* **AI Orchestrator:** CrewAI (Multi-Agent Systems)
+* **AI Orchestrator:** Custom 3-Step LLM Pipeline (OpenAI GPT-4o-mini)
+* **Knowledge Base:** `fitness_rules.md` (Expert rulebook injected into AI prompts)
+* **Data Storage:** Static JSON Catalog (`exercises.json`)
 * **Containerization:** Docker & Docker Compose
 
-### Frontend (Upcoming)
+### Frontend
 
-* **Framework:** Flutter (Dart)
-* **State Management:** Riverpod
+* **Framework:** React Native (TypeScript) with Expo
+* **Theming:** Custom dual-theme system (Dark Mode / Pink Mode)
 * **Communication:** REST API
 
 ---
@@ -48,108 +50,76 @@ graph LR
 ### Core Infrastructure
 
 * [x] **Dockerized Environment:** One-command setup for Database and Services.
-* [x] **Vector Database:** Schema designed for semantic search of exercises (RAG).
-* [x] **Smart Data Seeding:** Automated script to populate DB with biomechanics metadata & embeddings.
+* [x] **JSON Exercise Catalog:** Fast, reliable, and strict static storage for all exercises.
 * [x] **Database Migrations:** Version control for the DB schema using Alembic.
 
-### AI & Agents (The "Brain")
+### AI Pipeline (The "Brain")
 
-* [x] **Multi-Agent Crew:** Specialized agents for Strategy (Split), Selection (Exercises), and Coaching (Math).
-* [x] **Hallucination Guardrails:** Strict SQL-based tools ensure the AI cannot invent non-existent exercises.
+* [x] **3-Step Generation:** Strategist (Macro Plan) -> Selector (Strict Filtering) -> Coach (Micro Details).
+* [x] **Knowledge-Driven Rules:** Expert fitness rulebook (`fitness_rules.md`) injected into the Strategist to enforce split-type logic based on experience level and goals.
+* [x] **Hallucination Guardrails:** Pure Python logic handles exercise selection from the JSON catalog, ensuring the AI cannot invent non-existent exercises.
 * [x] **Contextual Equipment Merging:** Deterministic logic handles "Gym" vs "Park" vs "Home" equipment availability.
+* [x] **Funny Naming:** Each program gets a humorous animal-themed name (e.g., "The Shredded Flamingo Program").
 
 ### Lifecycle Management (The "Trainer")
 
-* [x] **Persistence:** Workout plans are saved as structured JSONB for historical tracking.
-* [x] **Exercise Swapping:** "Swap" endpoint uses AI to find biomechanical equivalents (e.g., Lat Pulldown -> Pull-up) without breaking the plan.
-* [x] **Difficulty Adjustment:** "Adjust" endpoint scales volume or changes methods (e.g., Standard -> EMOM) on the fly.
-* [x] **Progression System:** Generates *next* month's program based on the history and feedback of the *previous* block.
+* [x] **Persistence:** Workout plans and user biometrics are saved to PostgreSQL for historical tracking.
+* [x] **Exercise Swapping:** "Swap" endpoint uses Python to find biomechanical equivalents and LLMs to assign sets/reps.
+* [x] **Bulk Exercise Replacement:** Select multiple exercises across different days and replace them all at once with the `BulkExerciseSwapper` agent.
+* [x] **Restructure Split:** Change your workout split (e.g., Full Body → Push/Pull/Legs) while preserving existing exercises via the exercise pool system.
+* [x] **Difficulty Adjustment:** Scale volume or change methods (e.g., Standard → EMOM) on the fly via AI.
+* [x] **Progression System:** Generates the *next* month's program based on history, biometrics, and feedback.
+
+### Frontend (React Native)
+
+* [x] **Questionnaire:** Collects user biometrics, goals, experience level, location, equipment, and training days.
+* [x] **Workout Display:** Day-by-day view with exercise cards showing sets, reps, rest, method, intensity, and notes.
+* [x] **Modify Exercises Mode:** Tap to select exercises across multiple days, then bulk-replace with a floating action button.
+* [x] **Change Split Modal:** Choose a new split structure and the AI rebuilds the plan.
+* [x] **Dual Theme:** Toggle between Dark Mode and Pink Mode.
 
 ---
 
 ## 🚀 Getting Started
 
+> For a detailed step-by-step startup guide, see [README_STARTUP.md](./README_STARTUP.md).
+
 ### Prerequisites
 
 * Docker Desktop (Running)
 * Python 3.12+
-* OpenAI API Key (For generating embeddings & Agent Logic)
+* Node.js 18+
+* OpenAI API Key
 
-### 1. Clone & Setup
+### Quick Start
 
 ```bash
-git clone [https://github.com/EmanueleCeglia/LazyTrainerApp.git](https://github.com/EmanueleCeglia/LazyTrainerApp.git)
+# 1. Clone
+git clone https://github.com/EmanueleCeglia/LazyTrainerApp.git
 cd LazyTrainerApp
 
-```
-
-### 2. Infrastructure (Start Database)
-
-Start the PostgreSQL container with pgvector support:
-
-```bash
+# 2. Start Database
 docker-compose up -d
 
-```
-
-### 3. Backend Setup
-
-```bash
+# 3. Backend
 cd backend
 python -m venv venv
-
-# Windows
-venv\Scripts\activate
-# Mac/Linux
-source venv/bin/activate
-
+venv\Scripts\activate          # Windows
 pip install -r requirements.txt
 
-```
+# 4. Create backend/.env (see README_STARTUP.md for contents)
 
-### 4. Configuration (.env)
-
-Create a `.env` file in the `backend/` directory to store your secrets.
-**Do not commit this file.**
-
-```ini
-# Database
-DATABASE_URL=postgresql+psycopg2://postgres:password@localhost:5432/postgres
-
-# AI Keys
-OPENAI_API_KEY=sk-proj-YOUR_KEY_HERE
-OPENAI_MODEL_NAME=gpt-4o
-
-```
-
-### 5. Database Initialization
-
-Apply the migrations to create tables in the running container:
-
-```bash
+# 5. Run migrations
 alembic upgrade head
 
+# 6. Start Backend (use your LAN IP for mobile access)
+uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+# 7. Frontend (new terminal)
+cd frontend
+npm install
+npx expo start
 ```
-
-### 6. Seed the Database (Populate Data)
-
-This script fills the empty database with exercises and generates their AI embeddings.
-*(Note: Ensure your .env file is set up or export the key manually)*.
-
-```bash
-python -m src.scripts.seed_db
-
-```
-
-### 7. Run the Server
-
-```bash
-uvicorn src.main:app --reload
-
-```
-
-* **API URL:** `http://127.0.0.1:8000`
-* **Swagger Documentation:** `http://127.0.0.1:8000/docs`
 
 ---
 
@@ -159,22 +129,36 @@ uvicorn src.main:app --reload
 LazyTrainerApp/
 ├── backend/
 │   ├── src/
-│   │   ├── api/          # FastAPI Routes (Create, Swap, Adjust)
-│   │   ├── crew/         # 🧠 THE BRAIN: Multi-Agent Logic
-│   │   │   ├── agents.py     # Strategist, Selector, Coach definitions
-│   │   │   ├── tasks.py      # Sequential Task Pipeline
-│   │   │   ├── tools.py      # Vector Search Tool
-│   │   │   ├── main.py       # Orchestrator
-│   │   │   └── modifier.py   # Lightweight runner for Swaps/Adjustments
-│   │   ├── database/     # DB Connection & SQLAlchemy Models
-│   │   ├── scripts/      # Data Seeding & Utility Scripts
-│   │   └── main.py       # Application Entry Point
-│   ├── alembic/          # Database Migration scripts
-│   └── requirements.txt  # Python Dependencies
-├── frontend/             # Flutter Application (Under Construction)
-├── docker-compose.yml    # Infrastructure orchestration
+│   │   ├── api/
+│   │   │   ├── routes.py         # API Endpoints (Generate, Swap, Adjust, Restructure, BulkSwap)
+│   │   │   └── schemas.py        # Pydantic Models (Input/Output Validation)
+│   │   ├── ai/                   # 🧠 THE BRAIN
+│   │   │   ├── pipeline.py       # WorkoutPipeline, WorkoutModifier, BulkExerciseSwapper
+│   │   │   └── fitness_rules.md  # Expert Fitness Rulebook (Knowledge Base)
+│   │   ├── data/
+│   │   │   └── exercises.json    # Curated Exercise Catalog
+│   │   ├── database/
+│   │   │   ├── connection.py     # DB Session
+│   │   │   └── models.py        # SQL Tables (UserProfile, WorkoutPlan)
+│   │   └── main.py              # App Entry Point
+│   ├── alembic/                  # Database Migration scripts
+│   ├── .env                      # Secrets (NOT IN GIT)
+│   └── alembic.ini
+├── frontend/
+│   ├── App.tsx                   # Root Component
+│   └── src/
+│       ├── api/client.ts         # API Client (generate, restructure, bulkSwap)
+│       ├── components/Button.tsx # Reusable Button Component
+│       ├── screens/
+│       │   ├── QuestionnaireScreen.tsx  # User Input Form
+│       │   └── WorkoutScreen.tsx       # Plan Display + Edit Mode
+│       └── styles/
+│           ├── theme.ts          # Design Tokens
+│           └── ThemeContext.tsx   # Dark/Pink Mode Provider
+├── docker-compose.yml
+├── DEVELOPER_GUIDE.md
+├── README_STARTUP.md
 └── README.md
-
 ```
 
 ---
@@ -182,5 +166,3 @@ LazyTrainerApp/
 ## 📄 License
 
 This project is licensed under the MIT License.
-
-```

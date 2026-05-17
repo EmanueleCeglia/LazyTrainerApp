@@ -8,26 +8,18 @@ class UserProfileRequest(BaseModel):
     weight: float
     height: float
     gender: Literal["Male", "Female", "Other"]
+    experience_level: Literal["Beginner", "Intermediate", "Advanced"]
     
-    # --- Time Constraints ---
+    # --- Logistics ---
     days_per_week: int = Field(..., ge=1, le=7)
     session_duration_minutes: int = Field(..., ge=15)
     
-    # --- Preferences & Environment ---
-    target_zone: List[str]        # e.g., ["Upper", "Lower"]
+    # --- Environment ---
     location: Literal["Home", "Gym", "Park"]
-    equipment: List[str]          # e.g., ["Dumbbell", "Bench"]
+    equipment: List[str] = []
     
-    # NEW: Preference for exercise style (even in Gym)
-    exercise_preference: Literal["Mixed", "Bodyweight Only", "Weighted Preferred"] = "Mixed"
-    
-    # --- Program Strategy ---
-    split_type: Literal["Monofrequency", "Multifrequency"]
-    experience_level: Literal["Beginner", "Intermediate", "Advanced"]
-    
-    # --- Constraints & Goals ---
-    injuries: List[str]           # e.g., ["knee_pain"]
-    goals: List[str]              # e.g., ["Hypertrophy"]
+    # --- Goals ---
+    goals: List[str]
 
 class WorkoutPlanResponse(BaseModel):
     status: str
@@ -52,8 +44,6 @@ class ExerciseSwapRequest(BaseModel):
     
     # 3. Style/Equipment Preference
     swap_preference: Optional[Literal["Bodyweight Only", "Machine", "Free Weight"]] = None
-    
-    injuries: List[str] = []
 
 class DifficultyModificationRequest(BaseModel):
     user_id: str
@@ -70,3 +60,15 @@ class ProgressionRequest(BaseModel):
     new_goal: Optional[List[str]] = None
     new_days_per_week: Optional[int] = None
     new_location: Optional[str] = None
+
+class RestructureRequest(BaseModel):
+    user_id: str
+    new_split_name: str # e.g., "Full Body", "Push/Pull/Legs", "Upper/Lower"
+
+class BulkSwapExerciseItem(BaseModel):
+    day_name: str       # e.g., "Day 1"
+    exercise_name: str  # e.g., "Bench Press"
+
+class BulkSwapRequest(BaseModel):
+    user_id: str
+    exercises: List[BulkSwapExerciseItem]

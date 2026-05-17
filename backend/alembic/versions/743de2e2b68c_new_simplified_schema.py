@@ -1,8 +1,8 @@
-"""Recreate users table with memory
+"""New simplified schema
 
-Revision ID: 4c7519d30ecb
-Revises: 557b78e7e599
-Create Date: 2026-01-02 14:18:36.209640
+Revision ID: 743de2e2b68c
+Revises: 
+Create Date: 2026-05-17 02:03:26.555180
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '4c7519d30ecb'
-down_revision: Union[str, Sequence[str], None] = '557b78e7e599'
+revision: str = '743de2e2b68c'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -28,9 +28,7 @@ def upgrade() -> None:
     sa.Column('gender', sa.String(), nullable=True),
     sa.Column('weight', sa.Float(), nullable=True),
     sa.Column('height', sa.Float(), nullable=True),
-    sa.Column('experience_level', sa.String(), nullable=True),
     sa.Column('location', sa.String(), nullable=True),
-    sa.Column('injuries', sa.ARRAY(sa.String()), nullable=True),
     sa.Column('equipment_available', sa.ARRAY(sa.String()), nullable=True),
     sa.Column('goals', sa.ARRAY(sa.String()), nullable=True),
     sa.PrimaryKeyConstraint('id'),

@@ -7,10 +7,9 @@ __pycache__/
 # Virtual Environments (CRITICAL)
 venv/
 env/
-.env
 .venv/
 
-# Environment Variables (Secrets)
+# Environment Variables (Secrets - NEVER COMMIT)
 .env
 .env.*
 !.env.example
@@ -18,7 +17,7 @@ env/
 # Database
 *.sqlite3
 *.db
-backend/postgres_data/  # Ignore local DB volume if mapped locally
+backend/postgres_data/
 
 # Logs
 *.log
@@ -31,16 +30,19 @@ backend/postgres_data/  # Ignore local DB volume if mapped locally
 # --- Docker ---
 docker-compose.override.yml
 
-# --- Flutter (Standard Ignores) ---
-frontend/build/
-frontend/.dart_tool/
-frontend/.packages
-frontend/.pub/
-frontend/pubspec.lock
-frontend/ios/Flutter/Generated.xcconfig
-frontend/ios/Flutter/app.flx
-frontend/ios/Flutter/app.zip
-frontend/ios/Flutter/flutter_assets/
-frontend/ios/ServiceDefinitions.json
-frontend/ios/Runner/GeneratedPluginRegistrant.*
-frontend/android/local.properties
+# --- React Native / Expo ---
+frontend/node_modules/
+frontend/.expo/
+frontend/dist/
+frontend/web-build/
+frontend/expo-env.d.ts
+frontend/.metro-health-check*
+frontend/ios/
+frontend/android/
+frontend/.kotlin/
+frontend/*.tsbuildinfo
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+*.pem
