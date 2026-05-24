@@ -28,7 +28,7 @@ DATABASE_URL=postgresql+psycopg2://postgres:password@localhost:5432/postgres
 
 # AI Provider
 OPENAI_API_KEY=your-openai-api-key-here
-OPENAI_MODEL_NAME=gpt-4o-mini
+OPENAI_MODEL_NAME=gpt-5.4-mini
 ```
 
 > ⚠️ **IMPORTANT:** Replace `your-openai-api-key-here` with your actual OpenAI API key. The `.gitignore` is already configured to exclude this file.

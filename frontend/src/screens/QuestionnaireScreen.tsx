@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, Modal, TouchableOpacity } from 'react-native';
 import { spacing, borderRadius } from '../styles/theme';
 import { useTheme } from '../styles/ThemeContext';
 import { Button } from '../components/Button';
@@ -8,8 +8,12 @@ import { Tag } from '../components/Tag';
 const GENDERS = ["Male", "Female", "Other"];
 const EXPERIENCE_LEVELS = ["Beginner", "Intermediate", "Advanced"];
 const LOCATIONS = ["Gym", "Home", "Park"];
-const GOALS = ["Hypertrophy", "Strength", "Fat Loss", "Endurance", "Mobility"];
-const EXTRA_EQUIPMENT = ["Dumbbells", "Kettlebell", "Resistance Bands", "Pull-up Bar", "Bench"];
+const GOALS = ["Muscle Growth", "Pure Strength", "Muscle Endurance"];
+const EXTRA_EQUIPMENT = [
+  "Dumbbells", "Barbell", "Kettlebell", "Bench",
+  "Squat Rack", "Smith Machine", "Pull-up Bar",
+  "Parallel Bars", "Low Bar", "Rings", "Resistance Bands"
+];
 
 interface QuestionnaireScreenProps {
   onComplete: (payload: any) => void;
@@ -28,13 +32,24 @@ export function QuestionnaireScreen({ onComplete, isLoading }: QuestionnaireScre
   const [duration, setDuration] = useState('60');
   const [location, setLocation] = useState('Gym');
   const [equipment, setEquipment] = useState<string[]>([]);
-  const [goals, setGoals] = useState<string[]>(['Hypertrophy']);
+  const [goals, setGoals] = useState<string[]>(['Muscle Growth']);
+  const [equipmentModalVisible, setEquipmentModalVisible] = useState(false);
+
+  const showEquipmentOption = location === 'Home' || location === 'Park';
 
   const toggleSelection = (item: string, list: string[], setList: (l: string[]) => void) => {
     if (list.includes(item)) {
       setList(list.filter(i => i !== item));
     } else {
       setList([...list, item]);
+    }
+  };
+
+  // Reset equipment when switching to Gym
+  const handleLocationChange = (loc: string) => {
+    setLocation(loc);
+    if (loc === 'Gym') {
+      setEquipment([]);
     }
   };
 
@@ -102,15 +117,21 @@ export function QuestionnaireScreen({ onComplete, isLoading }: QuestionnaireScre
           <Text style={[styles.label, { color: colors.text }]}>Environment</Text>
           <View style={styles.tagContainer}>
             {LOCATIONS.map(loc => (
-              <Tag key={loc} label={loc} selected={location === loc} onPress={() => setLocation(loc)} />
+              <Tag key={loc} label={loc} selected={location === loc} onPress={() => handleLocationChange(loc)} />
             ))}
           </View>
-          <Text style={[styles.subLabel, { color: colors.textMuted }]}>Extra Equipment Available:</Text>
-          <View style={styles.tagContainer}>
-            {EXTRA_EQUIPMENT.map(eq => (
-              <Tag key={eq} label={eq} selected={equipment.includes(eq)} onPress={() => toggleSelection(eq, equipment, setEquipment)} />
-            ))}
-          </View>
+
+          {/* Dynamic equipment button — only for Park/Home */}
+          {showEquipmentOption && (
+            <TouchableOpacity
+              style={[styles.equipmentBtn, { borderColor: colors.primary, backgroundColor: colors.surface }]}
+              onPress={() => setEquipmentModalVisible(true)}
+            >
+              <Text style={[styles.equipmentBtnText, { color: colors.primary }]}>
+                🏗️ Extra Equipment {equipment.length > 0 ? `(${equipment.length} selected)` : ''}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -130,6 +151,48 @@ export function QuestionnaireScreen({ onComplete, isLoading }: QuestionnaireScre
           />
         </View>
       </ScrollView>
+
+      {/* Equipment Selection Modal */}
+      <Modal visible={equipmentModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Select Extra Equipment</Text>
+            <Text style={[styles.modalSub, { color: colors.textMuted }]}>
+              What additional equipment do you have at {location.toLowerCase()}?
+            </Text>
+
+            <ScrollView style={styles.equipmentList}>
+              {EXTRA_EQUIPMENT.map(eq => (
+                <TouchableOpacity
+                  key={eq}
+                  style={[
+                    styles.equipmentItem,
+                    { borderColor: colors.textMuted + '30' },
+                    equipment.includes(eq) && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
+                  ]}
+                  onPress={() => toggleSelection(eq, equipment, setEquipment)}
+                >
+                  <Text style={[
+                    styles.equipmentItemText,
+                    { color: colors.text },
+                    equipment.includes(eq) && { color: colors.primary, fontWeight: 'bold' }
+                  ]}>
+                    {equipment.includes(eq) ? '✓ ' : ''}{eq}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.modalDoneBtn, { backgroundColor: colors.primary }]}
+              onPress={() => setEquipmentModalVisible(false)}
+            >
+              <Text style={styles.modalDoneBtnText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </KeyboardAvoidingView>
   );
 }
@@ -182,5 +245,58 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: spacing.xl,
     paddingBottom: spacing.xxl,
-  }
+  },
+  equipmentBtn: {
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  equipmentBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    padding: spacing.xl,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: spacing.xs,
+  },
+  modalSub: {
+    fontSize: 14,
+    marginBottom: spacing.lg,
+  },
+  equipmentList: {
+    marginBottom: spacing.md,
+  },
+  equipmentItem: {
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    marginBottom: spacing.sm,
+  },
+  equipmentItemText: {
+    fontSize: 16,
+  },
+  modalDoneBtn: {
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+  },
+  modalDoneBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
 });

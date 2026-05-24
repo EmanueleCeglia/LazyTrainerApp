@@ -72,3 +72,20 @@ class BulkSwapExerciseItem(BaseModel):
 class BulkSwapRequest(BaseModel):
     user_id: str
     exercises: List[BulkSwapExerciseItem]
+
+class EquipmentAlternativesRequest(BaseModel):
+    user_id: str
+    day_name: str
+    exercise_name: str
+
+class SmartSwapRequest(BaseModel):
+    user_id: str
+    day_name: str
+    exercise_name: str
+    target_zone: Literal["Upper", "Lower", "Core"]
+
+class ApplyEquipmentSwapRequest(BaseModel):
+    user_id: str
+    day_name: str
+    exercise_name: str
+    new_exercise_name: str

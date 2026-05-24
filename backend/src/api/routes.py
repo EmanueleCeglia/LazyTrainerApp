@@ -12,20 +12,25 @@ from src.api.schemas import DifficultyModificationRequest
 from src.api.schemas import ProgressionRequest
 from src.api.schemas import RestructureRequest
 from src.api.schemas import BulkSwapRequest
+from src.api.schemas import EquipmentAlternativesRequest, SmartSwapRequest, ApplyEquipmentSwapRequest
 
 router = APIRouter()
 
 # --- 1. DEFINE BASE KITS ---
 LOCATION_EQUIPMENT = {
     "Gym": [
-        "Barbell", "Bench", "Cable Machine", "Dumbbells", "Incline Bench", 
-        "Leg Curl Machine", "Leg Extension Machine", "Leg Press Machine", 
-        "Machine", "Pull-up Bar", "Rack", "Dip Station", "Parallel Bars"
+        "Machine", "Cable", "Barbell", "Dumbbells", "Bench",
+        "Squat Rack", "Smith Machine", "Kettlebell",
+        "Pull-up Bar", "Parallel Bars", "Low Bar", "Rings",
+        "Bodyweight"
     ],
     "Park": [
-        "Pull-up Bar", "Parallel Bars", "Dip Station", "Bar" 
+        "Pull-up Bar", "Parallel Bars", "Low Bar",
+        "Bodyweight"
     ],
-    "Home": [] 
+    "Home": [
+        "Bodyweight"
+    ]
 }
 
 def clean_json_string(raw_string: str) -> dict:
@@ -496,6 +501,138 @@ def bulk_swap_exercises(plan_id: str, request: BulkSwapRequest, db: Session = De
             "failures": failures
         }
 
+    except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- MODE 1: Equipment Alternatives (Deterministic) ---
+@router.post("/plans/{plan_id}/equipment-alternatives")
+def get_equipment_alternatives(plan_id: str, request: EquipmentAlternativesRequest, db: Session = Depends(get_db)):
+    try:
+        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
+        if not user_profile:
+            raise HTTPException(status_code=404, detail="User Profile not found")
+        
+        equipment = user_profile.equipment_available or LOCATION_EQUIPMENT.get(user_profile.location, [])
+        
+        pipeline = WorkoutPipeline(equipment=equipment)
+        alternatives = pipeline.find_equipment_alternatives(request.exercise_name, equipment)
+        
+        return {
+            "exercise_name": request.exercise_name,
+            "alternatives": [
+                {"name": ex["name"], "equipment": ex.get("equipment", []), "mechanics": ex.get("mechanics", "")}
+                for ex in alternatives
+            ]
+        }
+    except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- MODE 1: Apply Equipment Swap (no AI) ---
+@router.post("/plans/{plan_id}/apply-equipment-swap")
+def apply_equipment_swap(plan_id: str, request: ApplyEquipmentSwapRequest, db: Session = Depends(get_db)):
+    """Swap an exercise with the chosen alternative."""
+    try:
+        plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
+        if not plan:
+            raise HTTPException(status_code=404, detail="Plan not found")
+        
+        current_schedule = dict(plan.schedule)
+        
+        # Find the day and the exercise slot
+        for week_key, week_data in current_schedule.items():
+            if isinstance(week_data, dict) and request.day_name in week_data:
+                day_data = week_data[request.day_name]
+                if isinstance(day_data, dict):
+                    exercises = day_data.get("exercises", [])
+                    for i, ex in enumerate(exercises):
+                        if ex.get("name") == request.exercise_name:
+                            exercises[i] = {
+                                **ex,
+                                "name": request.new_exercise_name,
+                                "notes": f"Swapped from {request.exercise_name}"
+                            }
+                            break
+        
+        plan.schedule = current_schedule
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(plan, "schedule")
+        db.commit()
+        
+        return {"status": "success", "workout_plan": json.dumps(current_schedule)}
+    except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- MODE 2: Smart AI Swap ---
+@router.post("/plans/{plan_id}/smart-swap")
+def smart_swap_exercise(plan_id: str, request: SmartSwapRequest, db: Session = Depends(get_db)):
+    try:
+        plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
+        if not plan:
+            raise HTTPException(status_code=404, detail="Plan not found")
+        
+        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
+        if not user_profile:
+            raise HTTPException(status_code=404, detail="User Profile not found")
+        
+        equipment = user_profile.equipment_available or LOCATION_EQUIPMENT.get(user_profile.location, [])
+        goals = user_profile.goals or []
+        
+        # Get the current day's exercises (excluding the one being replaced)
+        current_schedule = dict(plan.schedule)
+        day_exercises = []
+        for week_key, week_data in current_schedule.items():
+            if isinstance(week_data, dict) and request.day_name in week_data:
+                day_data = week_data[request.day_name]
+                if isinstance(day_data, dict):
+                    day_exercises = [
+                        ex for ex in day_data.get("exercises", [])
+                        if ex.get("name") != request.exercise_name
+                    ]
+        
+        pipeline = WorkoutPipeline(equipment=equipment)
+        result = pipeline.find_smart_replacement(
+            exercise_name=request.exercise_name,
+            target_zone_override=request.target_zone,
+            day_exercises=day_exercises,
+            user_goals=goals,
+            equipment=equipment
+        )
+        
+        if not result:
+            return {"status": "no_alternatives", "message": "No exercises available for this target zone with your equipment."}
+        
+        # Apply the swap to the plan
+        for week_key, week_data in current_schedule.items():
+            if isinstance(week_data, dict) and request.day_name in week_data:
+                day_data = week_data[request.day_name]
+                if isinstance(day_data, dict):
+                    exercises = day_data.get("exercises", [])
+                    for i, ex in enumerate(exercises):
+                        if ex.get("name") == request.exercise_name:
+                            exercises[i] = {
+                                "name": result.get("name", "Unknown"),
+                                "sets": result.get("sets", "3"),
+                                "reps": result.get("reps", "10"),
+                                "rest": result.get("rest", "60s"),
+                                "method": result.get("method", "Standard"),
+                                "intensity": result.get("intensity", "RPE 7"),
+                                "notes": result.get("notes", "")
+                            }
+                            break
+        
+        plan.schedule = current_schedule
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(plan, "schedule")
+        db.commit()
+        
+        return {
+            "status": "success",
+            "workout_plan": json.dumps(current_schedule),
+            "replacement": result
+        }
     except Exception as e:
         print(f"❌ ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

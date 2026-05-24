@@ -1,550 +1,662 @@
 [
-    {
-        "name": "Push-Up (Standard)",
-        "target_zone": "Upper",
-        "force_type": "Push",
-        "muscle_group": "Chest",
-        "secondary_muscles": [
-            "Triceps",
-            "Front Delts",
-            "Core"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Bodyweight"
-        ],
-        "instructions": "Place hands shoulder-width, lower chest to floor, push back up keeping body rigid."
-    },
-    {
-        "name": "Diamond Push-Up",
-        "target_zone": "Upper",
-        "force_type": "Push",
-        "muscle_group": "Triceps",
-        "secondary_muscles": [
-            "Chest",
-            "Front Delts"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Bodyweight"
-        ],
-        "instructions": "Hands close forming a diamond, lower chest to hands, push up focusing on triceps."
-    },
-    {
-        "name": "Pike Push-Up",
-        "target_zone": "Upper",
-        "force_type": "Push",
-        "muscle_group": "Shoulders",
-        "secondary_muscles": [
-            "Triceps",
-            "Upper Chest"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Bodyweight"
-        ],
-        "instructions": "Downward dog position, lower head to floor, press back up vertically."
-    },
-    {
-        "name": "Dips",
-        "target_zone": "Upper",
-        "force_type": "Push",
-        "muscle_group": "Triceps",
-        "secondary_muscles": [
-            "Lower Chest",
-            "Front Delts"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Parallel Bars",
-            "Dip Station"
-        ],
-        "instructions": "Lower body until shoulders are below elbows, push back up to lockout."
-    },
-    {
-        "name": "Barbell Bench Press",
-        "target_zone": "Upper",
-        "force_type": "Push",
-        "muscle_group": "Chest",
-        "secondary_muscles": [
-            "Triceps",
-            "Front Delts"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Barbell",
-            "Bench"
-        ],
-        "instructions": "Lie on bench, lower bar to mid-chest, press explosively upward."
-    },
-    {
-        "name": "Incline Dumbbell Press",
-        "target_zone": "Upper",
-        "force_type": "Push",
-        "muscle_group": "Chest",
-        "secondary_muscles": [
-            "Triceps",
-            "Front Delts"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Dumbbells",
-            "Incline Bench"
-        ],
-        "instructions": "Bench set to 30-45 degrees, press weights straight up from shoulders."
-    },
-    {
-        "name": "Overhead Press (Military Press)",
-        "target_zone": "Upper",
-        "force_type": "Push",
-        "muscle_group": "Shoulders",
-        "secondary_muscles": [
-            "Triceps",
-            "Upper Chest",
-            "Core"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Barbell"
-        ],
-        "instructions": "Press bar from collarbone to overhead lockout, keeping core tight."
-    },
-    {
-        "name": "Lateral Raises",
-        "target_zone": "Upper",
-        "force_type": "Push",
-        "muscle_group": "Shoulders",
-        "secondary_muscles": [
-            "Traps"
-        ],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Dumbbells"
-        ],
-        "instructions": "Raise weights to sides until shoulder height, control the descent."
-    },
-    {
-        "name": "Tricep Pushdown",
-        "target_zone": "Upper",
-        "force_type": "Push",
-        "muscle_group": "Triceps",
-        "secondary_muscles": [],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Cable Machine",
-            "Rope"
-        ],
-        "instructions": "Keep elbows fixed at sides, extend arms downward fully."
-    },
-    {
-        "name": "Cable Crossover",
-        "target_zone": "Upper",
-        "force_type": "Push",
-        "muscle_group": "Chest",
-        "secondary_muscles": [
-            "Front Delts"
-        ],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Cable Machine"
-        ],
-        "instructions": "Pull handles together in bear-hug motion, squeeze pecs at center."
-    },
-    {
-        "name": "Pull-Up",
-        "target_zone": "Upper",
-        "force_type": "Pull",
-        "muscle_group": "Back",
-        "secondary_muscles": [
-            "Biceps",
-            "Forearms"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Pull-up Bar"
-        ],
-        "instructions": "Overhand grip, pull chin over bar, lower all the way down."
-    },
-    {
-        "name": "Chin-Up",
-        "target_zone": "Upper",
-        "force_type": "Pull",
-        "muscle_group": "Back",
-        "secondary_muscles": [
-            "Biceps",
-            "Forearms"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Pull-up Bar"
-        ],
-        "instructions": "Underhand grip, pull chin over bar, lower fully."
-    },
-    {
-        "name": "Inverted Row",
-        "target_zone": "Upper",
-        "force_type": "Pull",
-        "muscle_group": "Back",
-        "secondary_muscles": [
-            "Biceps",
-            "Rear Delts"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Bar",
-            "TRX"
-        ],
-        "instructions": "Hang under bar, keep body straight, pull chest to bar."
-    },
-    {
-        "name": "Lat Pulldown",
-        "target_zone": "Upper",
-        "force_type": "Pull",
-        "muscle_group": "Back",
-        "secondary_muscles": [
-            "Biceps",
-            "Rear Delts"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Cable Machine"
-        ],
-        "instructions": "Pull bar down to upper chest, squeeze lats, return slowly."
-    },
-    {
-        "name": "Barbell Bent-Over Row",
-        "target_zone": "Upper",
-        "force_type": "Pull",
-        "muscle_group": "Back",
-        "secondary_muscles": [
-            "Biceps",
-            "Lower Back"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Barbell"
-        ],
-        "instructions": "Hinge at hips, flat back, pull bar to stomach."
-    },
-    {
-        "name": "Seated Cable Row",
-        "target_zone": "Upper",
-        "force_type": "Pull",
-        "muscle_group": "Back",
-        "secondary_muscles": [
-            "Biceps",
-            "Rhomboids"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Cable Machine"
-        ],
-        "instructions": "Sit tall, pull handle to abdomen, squeeze shoulder blades back."
-    },
-    {
-        "name": "Face Pull",
-        "target_zone": "Upper",
-        "force_type": "Pull",
-        "muscle_group": "Shoulders",
-        "secondary_muscles": [
-            "Rear Delts",
-            "Rotator Cuff"
-        ],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Cable Machine",
-            "Rope"
-        ],
-        "instructions": "Pull rope to face, separating hands and rotating forearms up."
-    },
-    {
-        "name": "Dumbbell Bicep Curl",
-        "target_zone": "Upper",
-        "force_type": "Pull",
-        "muscle_group": "Biceps",
-        "secondary_muscles": [
-            "Forearms"
-        ],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Dumbbells"
-        ],
-        "instructions": "Curl weights to shoulders, keeping elbows at sides."
-    },
-    {
-        "name": "Air Squat",
-        "target_zone": "Lower",
-        "force_type": "Squat",
-        "muscle_group": "Quadriceps",
-        "secondary_muscles": [
-            "Glutes",
-            "Hamstrings"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Bodyweight"
-        ],
-        "instructions": "Feet shoulder-width, sit hips back and down, stand back up."
-    },
-    {
-        "name": "Barbell Back Squat",
-        "target_zone": "Lower",
-        "force_type": "Squat",
-        "muscle_group": "Quadriceps",
-        "secondary_muscles": [
-            "Glutes",
-            "Hamstrings",
-            "Core"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Barbell",
-            "Rack"
-        ],
-        "instructions": "Bar on upper back, deep squat maintaining spine neutrality, drive up."
-    },
-    {
-        "name": "Leg Press",
-        "target_zone": "Lower",
-        "force_type": "Squat",
-        "muscle_group": "Quadriceps",
-        "secondary_muscles": [
-            "Glutes"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Leg Press Machine"
-        ],
-        "instructions": "Push platform away with feet, avoid locking knees at top."
-    },
-    {
-        "name": "Leg Extension",
-        "target_zone": "Lower",
-        "force_type": "Squat",
-        "muscle_group": "Quadriceps",
-        "secondary_muscles": [],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Leg Extension Machine"
-        ],
-        "instructions": "Extend legs until straight, focusing solely on quads."
-    },
-    {
-        "name": "Romanian Deadlift (RDL)",
-        "target_zone": "Lower",
-        "force_type": "Hinge",
-        "muscle_group": "Hamstrings",
-        "secondary_muscles": [
-            "Glutes",
-            "Lower Back"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Barbell",
-            "Dumbbells"
-        ],
-        "instructions": "Slight knee bend, hinge at hips sending butt back, feel hamstring stretch, return."
-    },
-    {
-        "name": "Glute Bridge",
-        "target_zone": "Lower",
-        "force_type": "Hinge",
-        "muscle_group": "Glutes",
-        "secondary_muscles": [
-            "Hamstrings",
-            "Core"
-        ],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Bodyweight"
-        ],
-        "instructions": "Lie on back, lift hips to ceiling, squeeze glutes at top."
-    },
-    {
-        "name": "Hip Thrust",
-        "target_zone": "Lower",
-        "force_type": "Hinge",
-        "muscle_group": "Glutes",
-        "secondary_muscles": [
-            "Hamstrings"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Bench",
-            "Barbell"
-        ],
-        "instructions": "Upper back on bench, weight on hips, drive hips upward to extension."
-    },
-    {
-        "name": "Superman",
-        "target_zone": "Lower",
-        "force_type": "Hinge",
-        "muscle_group": "Lower Back",
-        "secondary_muscles": [
-            "Glutes",
-            "Hamstrings"
-        ],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Bodyweight"
-        ],
-        "instructions": "Lie prone, lift arms and legs, holding the arch."
-    },
-    {
-        "name": "Leg Curl",
-        "target_zone": "Lower",
-        "force_type": "Hinge",
-        "muscle_group": "Hamstrings",
-        "secondary_muscles": [],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Leg Curl Machine"
-        ],
-        "instructions": "Curl legs against resistance towards glutes."
-    },
-    {
-        "name": "Walking Lunge",
-        "target_zone": "Lower",
-        "force_type": "Lunge",
-        "muscle_group": "Quadriceps",
-        "secondary_muscles": [
-            "Glutes",
-            "Calves"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Bodyweight",
-            "Dumbbells"
-        ],
-        "instructions": "Step forward, drop back knee, drive up into next step."
-    },
-    {
-        "name": "Bulgarian Split Squat",
-        "target_zone": "Lower",
-        "force_type": "Lunge",
-        "muscle_group": "Quadriceps",
-        "secondary_muscles": [
-            "Glutes",
-            "Balance"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Bench",
-            "Dumbbells"
-        ],
-        "instructions": "Rear foot on bench, squat down with front leg, push back up."
-    },
-    {
-        "name": "Plank",
-        "target_zone": "Core",
-        "force_type": "Static",
-        "muscle_group": "Rectus Abdominis",
-        "secondary_muscles": [
-            "Transverse Abdominis",
-            "Shoulders"
-        ],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Bodyweight"
-        ],
-        "instructions": "Hold top of pushup position (or elbows), resist gravity, no sagging."
-    },
-    {
-        "name": "Side Plank",
-        "target_zone": "Core",
-        "force_type": "Static",
-        "muscle_group": "Obliques",
-        "secondary_muscles": [
-            "Shoulders"
-        ],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Bodyweight"
-        ],
-        "instructions": "Balance on one forearm and side of foot, hold hips high."
-    },
-    {
-        "name": "Hanging Leg Raise",
-        "target_zone": "Core",
-        "force_type": "Dynamic",
-        "muscle_group": "Rectus Abdominis",
-        "secondary_muscles": [
-            "Hip Flexors"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Pull-up Bar"
-        ],
-        "instructions": "Hang from bar, lift legs to 90 degrees or higher, control the drop."
-    },
-    {
-        "name": "Russian Twist",
-        "target_zone": "Core",
-        "force_type": "Dynamic",
-        "muscle_group": "Obliques",
-        "secondary_muscles": [
-            "Rectus Abdominis"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Medicine Ball",
-            "Bodyweight"
-        ],
-        "instructions": "Sit in V-shape, rotate torso side to side tapping the floor."
-    },
-    {
-        "name": "Bicycle Crunch",
-        "target_zone": "Core",
-        "force_type": "Dynamic",
-        "muscle_group": "Obliques",
-        "secondary_muscles": [
-            "Rectus Abdominis"
-        ],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Bodyweight"
-        ],
-        "instructions": "Lie on back, alternate elbow to opposite knee in pedaling motion."
-    },
-    {
-        "name": "Ab Wheel Rollout",
-        "target_zone": "Core",
-        "force_type": "Dynamic",
-        "muscle_group": "Rectus Abdominis",
-        "secondary_muscles": [
-            "Lats"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Ab Wheel"
-        ],
-        "instructions": "Roll wheel forward extending body, pull back using abs."
-    },
-    {
-        "name": "Cable Woodchopper",
-        "target_zone": "Core",
-        "force_type": "Dynamic",
-        "muscle_group": "Obliques",
-        "secondary_muscles": [
-            "Shoulders"
-        ],
-        "mechanics": "Compound",
-        "equipment": [
-            "Cable Machine"
-        ],
-        "instructions": "Pull cable diagonally across body, pivoting back foot."
-    },
-    {
-        "name": "Standing Calf Raise",
-        "target_zone": "Lower",
-        "force_type": "Push",
-        "muscle_group": "Calves",
-        "secondary_muscles": [],
-        "mechanics": "Isolation",
-        "equipment": [
-            "Machine",
-            "Step"
-        ],
-        "instructions": "Elevate heels, lower down for stretch, drive up onto toes."
-    }
+  {
+    "name": "Chest Press Machine",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Triceps", "Front Delts"],
+    "mechanics": "Compound",
+    "equipment": ["Machine"],
+    "instructions": "Sit on the machine, grab the handles, and push forward until arms are extended."
+  },
+  {
+    "name": "Pectoral Machine",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Front Delts"],
+    "mechanics": "Isolation",
+    "equipment": ["Machine"],
+    "instructions": "Sit on the machine, place arms on the pads, and bring them together in front of your chest."
+  },
+  {
+    "name": "Shoulder Press Machine",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Shoulders",
+    "secondary_muscles": ["Triceps"],
+    "mechanics": "Compound",
+    "equipment": ["Machine"],
+    "instructions": "Sit on the machine, grab the handles above your shoulders, and press upwards."
+  },
+  {
+    "name": "Lat Pulldown Machine",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Back",
+    "secondary_muscles": ["Biceps"],
+    "mechanics": "Compound",
+    "equipment": ["Machine"],
+    "instructions": "Sit on the machine, grab the bar, and pull it down to your chest."
+  },
+  {
+    "name": "Rear Delt Machine",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Shoulders",
+    "secondary_muscles": ["Upper Back"],
+    "mechanics": "Isolation",
+    "equipment": ["Machine"],
+    "instructions": "Sit facing the machine, grab the handles, and pull them backwards."
+  },
+  {
+    "name": "Row Machine",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Back",
+    "secondary_muscles": ["Biceps"],
+    "mechanics": "Compound",
+    "equipment": ["Machine"],
+    "instructions": "Sit on the machine, grab the handles, and pull them towards your chest."
+  },
+  {
+    "name": "Leg Press",
+    "target_zone": "Lower",
+    "force_type": "Squat",
+    "muscle_group": "Quads",
+    "secondary_muscles": ["Glutes", "Hamstrings"],
+    "mechanics": "Compound",
+    "equipment": ["Machine"],
+    "instructions": "Sit on the machine, place feet on the platform, and press the platform away."
+  },
+  {
+    "name": "Hack Squat",
+    "target_zone": "Lower",
+    "force_type": "Squat",
+    "muscle_group": "Quads",
+    "secondary_muscles": ["Glutes"],
+    "mechanics": "Compound",
+    "equipment": ["Machine"],
+    "instructions": "Position yourself in the machine, lower your body by bending your knees, and press back up."
+  },
+  {
+    "name": "Leg Extension",
+    "target_zone": "Lower",
+    "force_type": "Dynamic",
+    "muscle_group": "Quads",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Machine"],
+    "instructions": "Sit on the machine, place legs under the pad, and extend your legs upwards."
+  },
+  {
+    "name": "Leg Curl",
+    "target_zone": "Lower",
+    "force_type": "Dynamic",
+    "muscle_group": "Hamstrings",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Machine"],
+    "instructions": "Lie or sit on the machine, and curl your legs towards your glutes."
+  },
+  {
+    "name": "Glute Machine",
+    "target_zone": "Lower",
+    "force_type": "Hinge",
+    "muscle_group": "Glutes",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Machine"],
+    "instructions": "Use the machine pad to push your leg back and squeeze your glutes."
+  },
+  {
+    "name": "Adductor Machine",
+    "target_zone": "Lower",
+    "force_type": "Dynamic",
+    "muscle_group": "Adductors",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Machine"],
+    "instructions": "Sit on the machine and squeeze your legs together against the resistance."
+  },
+  {
+    "name": "Abductor Machine",
+    "target_zone": "Lower",
+    "force_type": "Dynamic",
+    "muscle_group": "Abductors",
+    "secondary_muscles": ["Glutes"],
+    "mechanics": "Isolation",
+    "equipment": ["Machine"],
+    "instructions": "Sit on the machine and push your legs apart against the resistance."
+  },
+  {
+    "name": "Calf Machine",
+    "target_zone": "Lower",
+    "force_type": "Dynamic",
+    "muscle_group": "Calves",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Machine"],
+    "instructions": "Perform calf raises using the resistance of the machine."
+  },
+  {
+    "name": "Hip Thrust Machine",
+    "target_zone": "Lower",
+    "force_type": "Hinge",
+    "muscle_group": "Glutes",
+    "secondary_muscles": ["Hamstrings"],
+    "mechanics": "Compound",
+    "equipment": ["Machine"],
+    "instructions": "Place the belt/pad over your hips and thrust upward squeezing your glutes."
+  },
+  {
+    "name": "Core Machine",
+    "target_zone": "Core",
+    "force_type": "Dynamic",
+    "muscle_group": "Abs",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Machine"],
+    "instructions": "Use the machine to perform weighted crunches or rotational movements."
+  },
+  {
+    "name": "Cable Lat Pulldown",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Back",
+    "secondary_muscles": ["Biceps"],
+    "mechanics": "Compound",
+    "equipment": ["Cable"],
+    "instructions": "Use the high cable to pull the bar down to your chest."
+  },
+  {
+    "name": "Cable Row",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Back",
+    "secondary_muscles": ["Biceps"],
+    "mechanics": "Compound",
+    "equipment": ["Cable"],
+    "instructions": "Use the cable to pull the attachment towards your torso."
+  },
+  {
+    "name": "Cable Chest Fly",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Front Delts"],
+    "mechanics": "Isolation",
+    "equipment": ["Cable"],
+    "instructions": "Use the cables from a high, medium, or low position to perform a fly motion."
+  },
+  {
+    "name": "Cable Lateral Raises",
+    "target_zone": "Upper",
+    "force_type": "Dynamic",
+    "muscle_group": "Shoulders",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Cable"],
+    "instructions": "Use a low cable to raise your arm to the side."
+  },
+  {
+    "name": "Cable Biceps Extension",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Biceps",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Cable"],
+    "instructions": "Use a low cable to perform a biceps curl."
+  },
+  {
+    "name": "Cable Triceps Extension",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Triceps",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Cable"],
+    "instructions": "Use a cable to extend your arms, isolating the triceps."
+  },
+  {
+    "name": "Cable Glute Kickback",
+    "target_zone": "Lower",
+    "force_type": "Hinge",
+    "muscle_group": "Glutes",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Cable"],
+    "instructions": "Attach a low cable to your ankle and kick your leg backwards."
+  },
+  {
+    "name": "Cable Core Crunch",
+    "target_zone": "Core",
+    "force_type": "Dynamic",
+    "muscle_group": "Abs",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Cable"],
+    "instructions": "Use a high cable with a rope attachment to perform kneeling crunches."
+  },
+  {
+    "name": "Barbell Horizontal Bench Press",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Triceps", "Front Delts"],
+    "mechanics": "Compound",
+    "equipment": ["Barbell", "Bench"],
+    "instructions": "Lie on a flat bench and press the barbell upwards."
+  },
+  {
+    "name": "Dumbbell Horizontal Bench Press",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Triceps", "Front Delts"],
+    "mechanics": "Compound",
+    "equipment": ["Dumbbells", "Bench"],
+    "instructions": "Lie on a flat bench and press the dumbbells upwards."
+  },
+  {
+    "name": "Barbell Incline Bench Press",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Triceps", "Front Delts"],
+    "mechanics": "Compound",
+    "equipment": ["Barbell", "Bench"],
+    "instructions": "Lie on an incline bench and press the barbell upwards."
+  },
+  {
+    "name": "Dumbbell Incline Bench Press",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Triceps", "Front Delts"],
+    "mechanics": "Compound",
+    "equipment": ["Dumbbells", "Bench"],
+    "instructions": "Lie on an incline bench and press the dumbbells upwards."
+  },
+  {
+    "name": "Dumbbell Chest Fly",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Front Delts"],
+    "mechanics": "Isolation",
+    "equipment": ["Dumbbells", "Bench"],
+    "instructions": "Lie on a bench and perform a fly motion with dumbbells."
+  },
+  {
+    "name": "Barbell Military Press",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Shoulders",
+    "secondary_muscles": ["Triceps"],
+    "mechanics": "Compound",
+    "equipment": ["Barbell"],
+    "instructions": "Stand or sit and press the barbell overhead."
+  },
+  {
+    "name": "Dumbbell Military Press",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Shoulders",
+    "secondary_muscles": ["Triceps"],
+    "mechanics": "Compound",
+    "equipment": ["Dumbbells"],
+    "instructions": "Stand or sit and press the dumbbells overhead."
+  },
+  {
+    "name": "Barbell Row",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Back",
+    "secondary_muscles": ["Biceps"],
+    "mechanics": "Compound",
+    "equipment": ["Barbell"],
+    "instructions": "Hinge at the hips and pull the barbell towards your torso."
+  },
+  {
+    "name": "Dumbbell Row",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Back",
+    "secondary_muscles": ["Biceps"],
+    "mechanics": "Compound",
+    "equipment": ["Dumbbells", "Bench"],
+    "instructions": "Support yourself on a bench and pull the dumbbell towards your torso."
+  },
+  {
+    "name": "Dumbbell Lateral Raises",
+    "target_zone": "Upper",
+    "force_type": "Dynamic",
+    "muscle_group": "Shoulders",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Dumbbells"],
+    "instructions": "Stand and raise the dumbbells to your sides."
+  },
+  {
+    "name": "Barbell Biceps Curl",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Biceps",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Barbell"],
+    "instructions": "Stand and curl the barbell upwards."
+  },
+  {
+    "name": "Dumbbell Biceps Curl",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Biceps",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Dumbbells"],
+    "instructions": "Stand and curl the dumbbells upwards."
+  },
+  {
+    "name": "Scott Bench Biceps Curl",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Biceps",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Barbell", "Dumbbells", "Bench"],
+    "instructions": "Use a preacher bench (Scott bench) to perform biceps curls."
+  },
+  {
+    "name": "Barbell Lying Triceps Extension",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Triceps",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Barbell", "Bench"],
+    "instructions": "Lie on a bench and extend the barbell upwards."
+  },
+  {
+    "name": "Dumbbell Lying Triceps Extension",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Triceps",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Dumbbells", "Bench"],
+    "instructions": "Lie on a bench and extend the dumbbells upwards."
+  },
+  {
+    "name": "Barbell Squat",
+    "target_zone": "Lower",
+    "force_type": "Squat",
+    "muscle_group": "Quads",
+    "secondary_muscles": ["Glutes", "Hamstrings"],
+    "mechanics": "Compound",
+    "equipment": ["Barbell", "Squat Rack"],
+    "instructions": "Place the barbell on your shoulders, lower into a squat, and stand back up."
+  },
+  {
+    "name": "Kettlebell/Dumbbell Squat",
+    "target_zone": "Lower",
+    "force_type": "Squat",
+    "muscle_group": "Quads",
+    "secondary_muscles": ["Glutes"],
+    "mechanics": "Compound",
+    "equipment": ["Kettlebell", "Dumbbells"],
+    "instructions": "Hold a kettlebell or dumbbell(s) at chest level and perform a squat."
+  },
+  {
+    "name": "Deadlift",
+    "target_zone": "Lower",
+    "force_type": "Hinge",
+    "muscle_group": "Hamstrings",
+    "secondary_muscles": ["Glutes", "Lower Back"],
+    "mechanics": "Compound",
+    "equipment": ["Barbell"],
+    "instructions": "Lift the barbell from the ground by extending your hips and knees."
+  },
+  {
+    "name": "Barbell Romanian Deadlift",
+    "target_zone": "Lower",
+    "force_type": "Hinge",
+    "muscle_group": "Hamstrings",
+    "secondary_muscles": ["Glutes"],
+    "mechanics": "Compound",
+    "equipment": ["Barbell"],
+    "instructions": "Keep legs relatively straight and hinge at the hips to lower the barbell, then return to standing."
+  },
+  {
+    "name": "Dumbbell Romanian Deadlift",
+    "target_zone": "Lower",
+    "force_type": "Hinge",
+    "muscle_group": "Hamstrings",
+    "secondary_muscles": ["Glutes"],
+    "mechanics": "Compound",
+    "equipment": ["Dumbbells"],
+    "instructions": "Keep legs relatively straight and hinge at the hips to lower the dumbbells, then return to standing."
+  },
+  {
+    "name": "Barbell Hip Thrust",
+    "target_zone": "Lower",
+    "force_type": "Hinge",
+    "muscle_group": "Glutes",
+    "secondary_muscles": ["Hamstrings"],
+    "mechanics": "Compound",
+    "equipment": ["Barbell", "Bench"],
+    "instructions": "Rest your upper back on a bench, place a barbell across your hips, and thrust upwards."
+  },
+  {
+    "name": "Dumbbell Bulgarian Split Squat",
+    "target_zone": "Lower",
+    "force_type": "Lunge",
+    "muscle_group": "Quads",
+    "secondary_muscles": ["Glutes"],
+    "mechanics": "Compound",
+    "equipment": ["Dumbbells", "Bench"],
+    "instructions": "Elevate your rear foot on a bench, hold dumbbells, and perform a split squat."
+  },
+  {
+    "name": "Smith Machine Bulgarian Split Squat",
+    "target_zone": "Lower",
+    "force_type": "Lunge",
+    "muscle_group": "Quads",
+    "secondary_muscles": ["Glutes"],
+    "mechanics": "Compound",
+    "equipment": ["Smith Machine", "Bench"],
+    "instructions": "Elevate your rear foot on a bench and perform a split squat using the Smith machine."
+  },
+  {
+    "name": "Pull-Ups",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Back",
+    "secondary_muscles": ["Biceps"],
+    "mechanics": "Compound",
+    "equipment": ["Pull-up Bar"],
+    "instructions": "Use a prone, supine, or parallel grip to pull yourself up to the bar."
+  },
+  {
+    "name": "Parallel Bar Dips",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Triceps", "Shoulders"],
+    "mechanics": "Compound",
+    "equipment": ["Parallel Bars"],
+    "instructions": "Lower yourself between parallel bars and push back up."
+  },
+  {
+    "name": "Low Bar Push-Ups",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Triceps", "Shoulders"],
+    "mechanics": "Compound",
+    "equipment": ["Low Bar"],
+    "instructions": "Perform push-ups using a low bar for elevation."
+  },
+  {
+    "name": "Low Bar Australian Pull-Ups",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Back",
+    "secondary_muscles": ["Biceps"],
+    "mechanics": "Compound",
+    "equipment": ["Low Bar"],
+    "instructions": "Hang underneath a low bar with feet on the ground and pull your chest to the bar."
+  },
+  {
+    "name": "Ring Pull-Ups",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Back",
+    "secondary_muscles": ["Biceps"],
+    "mechanics": "Compound",
+    "equipment": ["Rings"],
+    "instructions": "Perform pull-ups using gymnastic rings."
+  },
+  {
+    "name": "Ring Dips",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Triceps", "Shoulders"],
+    "mechanics": "Compound",
+    "equipment": ["Rings"],
+    "instructions": "Perform dips using gymnastic rings for added instability."
+  },
+  {
+    "name": "Ring Push-Ups",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Triceps", "Shoulders"],
+    "mechanics": "Compound",
+    "equipment": ["Rings"],
+    "instructions": "Perform push-ups with your hands in gymnastic rings."
+  },
+  {
+    "name": "Ring Australian Pull-Ups",
+    "target_zone": "Upper",
+    "force_type": "Pull",
+    "muscle_group": "Back",
+    "secondary_muscles": ["Biceps"],
+    "mechanics": "Compound",
+    "equipment": ["Rings"],
+    "instructions": "Hang underneath the rings with feet on the ground and pull your chest up."
+  },
+  {
+    "name": "Push-Ups",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Chest",
+    "secondary_muscles": ["Triceps", "Shoulders"],
+    "mechanics": "Compound",
+    "equipment": ["Bodyweight"],
+    "instructions": "Perform standard push-ups on the ground."
+  },
+  {
+    "name": "Pike Push-Ups",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Shoulders",
+    "secondary_muscles": ["Triceps"],
+    "mechanics": "Compound",
+    "equipment": ["Bodyweight"],
+    "instructions": "Get into a pike position (hips high) and perform a push-up."
+  },
+  {
+    "name": "Handstand Push-Ups",
+    "target_zone": "Upper",
+    "force_type": "Push",
+    "muscle_group": "Shoulders",
+    "secondary_muscles": ["Triceps"],
+    "mechanics": "Compound",
+    "equipment": ["Bodyweight"],
+    "instructions": "Perform a push-up while in a handstand against a wall."
+  },
+  {
+    "name": "Superman",
+    "target_zone": "Upper",
+    "force_type": "Static",
+    "muscle_group": "Lower Back",
+    "secondary_muscles": ["Glutes"],
+    "mechanics": "Isolation",
+    "equipment": ["Bodyweight"],
+    "instructions": "Lie face down and lift your arms and legs off the ground simultaneously."
+  },
+  {
+    "name": "Bodyweight Squat",
+    "target_zone": "Lower",
+    "force_type": "Squat",
+    "muscle_group": "Quads",
+    "secondary_muscles": ["Glutes"],
+    "mechanics": "Compound",
+    "equipment": ["Bodyweight"],
+    "instructions": "Perform a standard squat using only your bodyweight."
+  },
+  {
+    "name": "Jump Squat",
+    "target_zone": "Lower",
+    "force_type": "Dynamic",
+    "muscle_group": "Quads",
+    "secondary_muscles": ["Glutes", "Calves"],
+    "mechanics": "Compound",
+    "equipment": ["Bodyweight"],
+    "instructions": "Perform a squat and explode upwards into a jump."
+  },
+  {
+    "name": "Lunges",
+    "target_zone": "Lower",
+    "force_type": "Lunge",
+    "muscle_group": "Quads",
+    "secondary_muscles": ["Glutes"],
+    "mechanics": "Compound",
+    "equipment": ["Bodyweight"],
+    "instructions": "Step forward into a lunge and return to standing."
+  },
+  {
+    "name": "Jump Lunges",
+    "target_zone": "Lower",
+    "force_type": "Dynamic",
+    "muscle_group": "Quads",
+    "secondary_muscles": ["Glutes", "Calves"],
+    "mechanics": "Compound",
+    "equipment": ["Bodyweight"],
+    "instructions": "Perform a lunge and explosively jump, switching legs in the air."
+  },
+  {
+    "name": "Bodyweight Calf Raises",
+    "target_zone": "Lower",
+    "force_type": "Dynamic",
+    "muscle_group": "Calves",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Bodyweight"],
+    "instructions": "Stand on the ground or a step and raise your heels."
+  },
+  {
+    "name": "Plank",
+    "target_zone": "Core",
+    "force_type": "Static",
+    "muscle_group": "Abs",
+    "secondary_muscles": ["Core"],
+    "mechanics": "Isolation",
+    "equipment": ["Bodyweight"],
+    "instructions": "Hold a plank position on your forearms and toes."
+  },
+  {
+    "name": "Crunches",
+    "target_zone": "Core",
+    "force_type": "Dynamic",
+    "muscle_group": "Abs",
+    "secondary_muscles": [],
+    "mechanics": "Isolation",
+    "equipment": ["Bodyweight"],
+    "instructions": "Lie on your back, knees bent, and curl your upper body towards your knees."
+  }
 ]

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, ActivityIndicator, Alert, Animated, PanResponder, GestureResponderEvent, PanResponderGestureState } from 'react-native';
 import { spacing, borderRadius } from '../styles/theme';
 import { useTheme } from '../styles/ThemeContext';
 import { Button } from '../components/Button';
-import { restructureWorkout, bulkSwapExercises } from '../api/client';
+import { restructureWorkout, getEquipmentAlternatives, smartSwapExercise, applyEquipmentSwap } from '../api/client';
 
 interface WorkoutScreenProps {
   planData: any;
@@ -17,17 +17,26 @@ export function WorkoutScreen({ planData, planId, userId, onPlanUpdated, onReset
   const { colors } = useTheme();
   const [activeDay, setActiveDay] = useState<string | null>(null);
   
-  // Modal State (Change Split)
+  // Restructure Modal
   const [isModalVisible, setModalVisible] = useState(false);
   const [isRestructuring, setIsRestructuring] = useState(false);
   const splits = ["Full Body", "Push, Pull, Legs", "Upper / Lower", "Body Part Split"];
 
-  // Edit Mode State (Modify Exercises)
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedExercises, setSelectedExercises] = useState<Record<string, string[]>>({}); // { "Day 1": ["Bench Press", "Squat"] }
-  const [isSwapping, setIsSwapping] = useState(false);
+  // Long-press state: which exercise is "active" for modification
+  const [activeExercise, setActiveExercise] = useState<string | null>(null);
+  const longPressTimer = useRef<any>(null);
 
-  // Safely extract the week data
+  // Mode 1: Swipe state
+  const [swipeAlternatives, setSwipeAlternatives] = useState<any[]>([]);
+  const [swipeIndex, setSwipeIndex] = useState(0);
+  const [isLoadingAlternatives, setIsLoadingAlternatives] = useState(false);
+  const swipeX = useRef(new Animated.Value(0)).current;
+
+  // Mode 2: Smart swap
+  const [showMode2Menu, setShowMode2Menu] = useState(false);
+  const [isSmartSwapping, setIsSmartSwapping] = useState(false);
+
+  // Plan data
   const planName = planData?.plan_name || "Custom Workout Plan";
   const weekData = planData?.["Week 1"] || {};
   const days = Object.keys(weekData).filter(day => {
@@ -35,7 +44,6 @@ export function WorkoutScreen({ planData, planId, userId, onPlanUpdated, onReset
     return d !== "Rest" && typeof d === 'object' && d?.exercises;
   });
 
-  // Set initial active day to the first day with exercises if possible
   React.useEffect(() => {
     if (days.length > 0 && !activeDay) {
       setActiveDay(days[0]);
@@ -44,90 +52,121 @@ export function WorkoutScreen({ planData, planId, userId, onPlanUpdated, onReset
 
   const currentDayData = activeDay ? weekData[activeDay] : null;
 
-  // Count total selected exercises
-  const totalSelected = Object.values(selectedExercises).reduce((sum, arr) => sum + arr.length, 0);
-
-  // Check if a specific exercise is selected
-  const isExerciseSelected = (dayName: string, exName: string): boolean => {
-    return (selectedExercises[dayName] || []).includes(exName);
-  };
-
-  // Check if a day has any selected exercises
-  const dayHasSelections = (dayName: string): boolean => {
-    return (selectedExercises[dayName] || []).length > 0;
-  };
-
-  // Toggle exercise selection
-  const toggleExercise = (dayName: string, exName: string) => {
-    if (!isEditMode) return;
-    setSelectedExercises(prev => {
-      const dayList = prev[dayName] || [];
-      if (dayList.includes(exName)) {
-        // Deselect
-        const newList = dayList.filter(n => n !== exName);
-        const newState = { ...prev, [dayName]: newList };
-        if (newList.length === 0) delete newState[dayName];
-        return newState;
-      } else {
-        // Select
-        return { ...prev, [dayName]: [...dayList, exName] };
+  // --- Long Press Handling ---
+  const handlePressIn = (exName: string) => {
+    longPressTimer.current = setTimeout(async () => {
+      setActiveExercise(exName);
+      // Load Mode 1 alternatives
+      setIsLoadingAlternatives(true);
+      try {
+        const res = await getEquipmentAlternatives(planId, {
+          user_id: userId,
+          day_name: activeDay,
+          exercise_name: exName
+        });
+        setSwipeAlternatives(res.alternatives || []);
+        setSwipeIndex(0);
+      } catch (e: any) {
+        setSwipeAlternatives([]);
+      } finally {
+        setIsLoadingAlternatives(false);
       }
+    }, 1500); // 1.5 second long press
+  };
+
+  const handlePressOut = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  // --- Cancel active exercise ---
+  const cancelEdit = () => {
+    setActiveExercise(null);
+    setSwipeAlternatives([]);
+    setSwipeIndex(0);
+    setShowMode2Menu(false);
+    swipeX.setValue(0);
+  };
+
+  // --- Mode 1: Swipe to next alternative ---
+  const handleSwipeLeft = () => {
+    if (swipeAlternatives.length === 0) return;
+    const newIdx = (swipeIndex + 1) % swipeAlternatives.length;
+    Animated.timing(swipeX, { toValue: -300, duration: 150, useNativeDriver: true }).start(() => {
+      setSwipeIndex(newIdx);
+      swipeX.setValue(300);
+      Animated.timing(swipeX, { toValue: 0, duration: 150, useNativeDriver: true }).start();
     });
   };
 
-  // Enter / Exit edit mode
-  const handleToggleEditMode = () => {
-    if (isEditMode) {
-      // Exiting edit mode — clear selections
-      setSelectedExercises({});
-    }
-    setIsEditMode(!isEditMode);
+  const handleSwipeRight = () => {
+    if (swipeAlternatives.length === 0) return;
+    const newIdx = swipeIndex === 0 ? swipeAlternatives.length - 1 : swipeIndex - 1;
+    Animated.timing(swipeX, { toValue: 300, duration: 150, useNativeDriver: true }).start(() => {
+      setSwipeIndex(newIdx);
+      swipeX.setValue(-300);
+      Animated.timing(swipeX, { toValue: 0, duration: 150, useNativeDriver: true }).start();
+    });
   };
 
-  // Handle bulk swap
-  const handleBulkSwap = async () => {
-    // Build the payload
-    const exerciseList: { day_name: string; exercise_name: string }[] = [];
-    for (const [dayName, names] of Object.entries(selectedExercises)) {
-      for (const name of names) {
-        exerciseList.push({ day_name: dayName, exercise_name: name });
-      }
-    }
+  // --- Mode 1: Confirm swap ---
+  const confirmMode1Swap = async () => {
+    if (!activeExercise || !activeDay || swipeAlternatives.length === 0) return;
     
-    if (exerciseList.length === 0) return;
-
-    setIsSwapping(true);
+    const chosen = swipeAlternatives[swipeIndex];
+    
     try {
-      const response = await bulkSwapExercises(planId, {
+      const res = await applyEquipmentSwap(planId, {
         user_id: userId,
-        exercises: exerciseList
+        day_name: activeDay,
+        exercise_name: activeExercise,
+        new_exercise_name: chosen.name
       });
-
-      if (response.status === 'no_changes') {
-        Alert.alert("No Changes", response.message || "Could not find alternatives.");
-      } else {
-        onPlanUpdated(response.workout_plan);
-        
-        // Show failures if any
-        if (response.failures && response.failures.length > 0) {
-          const failNames = response.failures.map((f: any) => f.exercise_name).join(', ');
-          Alert.alert(
-            "Partial Success",
-            `Some exercises could not be replaced: ${failNames}`
-          );
-        }
-      }
-
-      // Exit edit mode
-      setSelectedExercises({});
-      setIsEditMode(false);
-    } catch (error: any) {
-      Alert.alert("Swap Failed", error.message);
+      onPlanUpdated(res.workout_plan);
+      Alert.alert("✓ Swapped!", `${activeExercise} → ${chosen.name}`);
+    } catch (e: any) {
+      Alert.alert("Swap Failed", e.message);
     } finally {
-      setIsSwapping(false);
+      cancelEdit();
     }
   };
 
+  // --- Mode 2: Smart AI swap ---
+  const handleSmartSwap = async (targetZone: string) => {
+    if (!activeExercise || !activeDay) return;
+    
+    setShowMode2Menu(false);
+    setIsSmartSwapping(true);
+    
+    try {
+      const res = await smartSwapExercise(planId, {
+        user_id: userId,
+        day_name: activeDay,
+        exercise_name: activeExercise,
+        target_zone: targetZone
+      });
+      
+      if (res.status === 'no_alternatives') {
+        Alert.alert("No Alternatives", res.message);
+      } else {
+        onPlanUpdated(res.workout_plan);
+        const replacement = res.replacement;
+        Alert.alert(
+          "✓ Smart Swap!",
+          `${activeExercise} → ${replacement?.name || 'New exercise'}\n${replacement?.reason || ''}`
+        );
+      }
+    } catch (e: any) {
+      Alert.alert("Swap Failed", e.message);
+    } finally {
+      setIsSmartSwapping(false);
+      cancelEdit();
+    }
+  };
+
+  // --- Restructure ---
   const handleRestructure = async (splitName: string) => {
     setIsRestructuring(true);
     try {
@@ -146,48 +185,48 @@ export function WorkoutScreen({ planData, planId, userId, onPlanUpdated, onReset
     }
   };
 
+  // --- Pan Responder for swipe gestures ---
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt: GestureResponderEvent, gestureState: PanResponderGestureState) => {
+        return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dy) < 40;
+      },
+      onPanResponderRelease: (evt: GestureResponderEvent, gestureState: PanResponderGestureState) => {
+        if (gestureState.dx < -50) {
+          handleSwipeLeft();
+        } else if (gestureState.dx > 50) {
+          handleSwipeRight();
+        }
+      },
+    })
+  ).current;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>{planName}</Text>
         <View style={styles.headerButtons}>
             <TouchableOpacity 
-              style={[
-                styles.headerBtn, 
-                { borderColor: isEditMode ? colors.accent : colors.primary },
-                isEditMode && { backgroundColor: colors.accent + '20' }
-              ]} 
-              onPress={handleToggleEditMode}
+              style={[styles.headerBtn, { borderColor: colors.primary }]} 
+              onPress={() => setModalVisible(true)}
             >
-              <Text style={[styles.headerBtnText, { color: isEditMode ? colors.accent : colors.primary }]}>
-                {isEditMode ? "Cancel" : "Modify\nExercises"}
-              </Text>
+              <Text style={[styles.headerBtnText, { color: colors.primary }]}>{"Change\nSplit"}</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[styles.headerBtn, { borderColor: colors.primary }, isEditMode && styles.headerBtnDisabled]} 
-              onPress={() => !isEditMode && setModalVisible(true)}
-              disabled={isEditMode}
+              style={[styles.headerBtn, { borderColor: colors.primary }]} 
+              onPress={onReset}
             >
-              <Text style={[styles.headerBtnText, { color: isEditMode ? colors.textMuted : colors.primary }]}>{"Change\nSplit"}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.headerBtn, { borderColor: colors.primary }, isEditMode && styles.headerBtnDisabled]} 
-              onPress={() => !isEditMode && onReset()}
-              disabled={isEditMode}
-            >
-              <Text style={[styles.headerBtnText, { color: isEditMode ? colors.textMuted : colors.primary }]}>{"New\nPlan"}</Text>
+              <Text style={[styles.headerBtnText, { color: colors.primary }]}>{"New\nPlan"}</Text>
             </TouchableOpacity>
         </View>
       </View>
 
-      {/* Edit mode banner */}
-      {isEditMode && (
-        <View style={[styles.editBanner, { backgroundColor: colors.accent + '15' }]}>
-          <Text style={[styles.editBannerText, { color: colors.accent }]}>
-            ✏️ Tap exercises to select them ({totalSelected} selected)
-          </Text>
-        </View>
-      )}
+      {/* Hint banner */}
+      <View style={[styles.hintBanner, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.hintText, { color: colors.textMuted }]}>
+          💡 Long-press on any exercise to modify it
+        </Text>
+      </View>
 
       {/* Tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.tabContainer, { borderBottomColor: colors.surface }]}>
@@ -197,15 +236,9 @@ export function WorkoutScreen({ planData, planId, userId, onPlanUpdated, onReset
             style={[styles.tab, activeDay === day && { borderBottomColor: colors.primaryGlow }]}
             onPress={() => setActiveDay(day)}
           >
-            <View style={styles.tabInner}>
-              <Text style={[styles.tabText, { color: colors.textMuted }, activeDay === day && { color: colors.primaryGlow }]}>
-                {day}
-              </Text>
-              {/* Selection indicator dot */}
-              {isEditMode && dayHasSelections(day) && (
-                <View style={[styles.tabDot, { backgroundColor: colors.accent }]} />
-              )}
-            </View>
+            <Text style={[styles.tabText, { color: colors.textMuted }, activeDay === day && { color: colors.primaryGlow }]}>
+              {day}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -215,11 +248,9 @@ export function WorkoutScreen({ planData, planId, userId, onPlanUpdated, onReset
         {currentDayData === "Rest" || !currentDayData?.exercises ? (
           <View style={styles.restDay}>
             <Text style={[styles.restText, { color: colors.accent }]}>Rest Day</Text>
-            <Text style={[styles.restSubText, { color: colors.textMuted }]}>Take time to recover!</Text>
           </View>
         ) : (
           <View>
-            {/* Show the day's overall method if it exists */}
             {currentDayData.method && (
               <View style={[styles.methodBadge, { backgroundColor: colors.primary + '20' }]}>
                 <Text style={[styles.methodText, { color: colors.primaryGlow }]}>Focus: {currentDayData.method}</Text>
@@ -227,76 +258,159 @@ export function WorkoutScreen({ planData, planId, userId, onPlanUpdated, onReset
             )}
 
             {currentDayData.exercises.map((ex: any, idx: number) => {
-              const selected = isEditMode && activeDay && isExerciseSelected(activeDay, ex.name);
+              const isActive = activeExercise === ex.name;
+
               return (
-                <TouchableOpacity 
-                  key={idx} 
-                  activeOpacity={isEditMode ? 0.7 : 1}
-                  onPress={() => activeDay && toggleExercise(activeDay, ex.name)}
-                >
-                  <View style={[
-                    styles.card, 
-                    { backgroundColor: colors.surface, borderColor: colors.textMuted + '50' },
-                    selected && { borderColor: colors.accent, borderWidth: 2, backgroundColor: colors.accent + '10' }
-                  ]}>
-                    <View style={styles.cardHeader}>
-                      <Text style={[styles.exName, { color: colors.text }, selected && { color: colors.accent }]}>{ex.name}</Text>
-                      {selected && (
-                        <View style={[styles.checkBadge, { backgroundColor: colors.accent }]}>
-                          <Text style={styles.checkText}>✓</Text>
+                <View key={idx}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPressIn={() => handlePressIn(ex.name)}
+                    onPressOut={handlePressOut}
+                    onPress={() => {
+                      // Regular tap does nothing special
+                    }}
+                  >
+                    <View style={[
+                      styles.card, 
+                      { backgroundColor: colors.surface, borderColor: colors.textMuted + '50' },
+                      isActive && { borderColor: colors.accent, borderWidth: 2, backgroundColor: colors.accent + '10' }
+                    ]}>
+                      <View style={styles.cardHeader}>
+                        <Text style={[styles.exName, { color: colors.text }, isActive && { color: colors.accent }]}>
+                          {ex.name}
+                        </Text>
+                        {isActive && (
+                          <TouchableOpacity onPress={cancelEdit}>
+                            <Text style={{ color: colors.accent, fontWeight: 'bold', fontSize: 14 }}>✕</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                      
+                      <View style={styles.metricsRow}>
+                        <View style={[styles.metricBox, { backgroundColor: colors.background }]}>
+                          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>Sets</Text>
+                          <Text style={[styles.metricValue, { color: colors.text }]}>{ex.sets}</Text>
+                        </View>
+                        <View style={[styles.metricBox, { backgroundColor: colors.background }]}>
+                          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>Reps</Text>
+                          <Text style={[styles.metricValue, { color: colors.text }]}>{ex.reps}</Text>
+                        </View>
+                        <View style={[styles.metricBox, { backgroundColor: colors.background }]}>
+                          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>Rest</Text>
+                          <Text style={[styles.metricValue, { color: colors.text }]}>{ex.rest}</Text>
+                        </View>
+                      </View>
+
+                      {(ex.method || ex.intensity) && (
+                        <View style={styles.advancedRow}>
+                          {ex.method && <Text style={[styles.tagText, { color: colors.accent }]}>⚡ {ex.method}</Text>}
+                          {ex.intensity && <Text style={[styles.tagText, { color: colors.accent }]}>🔥 {ex.intensity}</Text>}
+                        </View>
+                      )}
+
+                      {ex.notes && <Text style={[styles.notes, { color: colors.textMuted }]}>{ex.notes}</Text>}
+                    </View>
+                  </TouchableOpacity>
+
+                  {/* Mode 1: Swipe panel (appears below the active exercise card) */}
+                  {isActive && !showMode2Menu && (
+                    <View style={[styles.swipePanel, { backgroundColor: colors.surface, borderColor: colors.accent }]}>
+                      {isLoadingAlternatives ? (
+                        <View style={{ padding: 20, alignItems: 'center' }}>
+                          <ActivityIndicator color={colors.accent} />
+                          <Text style={{ color: colors.textMuted, marginTop: 8 }}>Loading alternatives...</Text>
+                        </View>
+                      ) : swipeAlternatives.length > 0 ? (
+                        <View>
+                          <Text style={[styles.swipeTitle, { color: colors.accent }]}>🔄 Same muscle, different equipment</Text>
+                          <View style={styles.browseRow}>
+                            <TouchableOpacity 
+                              style={[styles.arrowBtn, { backgroundColor: colors.background, borderColor: colors.accent + '40' }]} 
+                              onPress={handleSwipeRight}
+                            >
+                              <Text style={[styles.arrowText, { color: colors.accent }]}>◀</Text>
+                            </TouchableOpacity>
+                            <View style={[styles.altCard, { backgroundColor: colors.background, borderColor: colors.accent + '40', flex: 1 }]}>
+                              <Text style={[styles.altName, { color: colors.text }]}>
+                                {swipeAlternatives[swipeIndex]?.name}
+                              </Text>
+                              <Text style={[styles.altEquip, { color: colors.textMuted }]}>
+                                {swipeAlternatives[swipeIndex]?.equipment?.join(' + ') || 'Bodyweight'}
+                              </Text>
+                              <Text style={[styles.altCounter, { color: colors.textMuted }]}>
+                                {swipeIndex + 1} / {swipeAlternatives.length}
+                              </Text>
+                            </View>
+                            <TouchableOpacity 
+                              style={[styles.arrowBtn, { backgroundColor: colors.background, borderColor: colors.accent + '40' }]} 
+                              onPress={handleSwipeLeft}
+                            >
+                              <Text style={[styles.arrowText, { color: colors.accent }]}>▶</Text>
+                            </TouchableOpacity>
+                          </View>
+                          <View style={styles.swipeBtnRow}>
+                            <TouchableOpacity style={[styles.swipeActionBtn, { backgroundColor: colors.accent }]} onPress={confirmMode1Swap}>
+                              <Text style={styles.swipeActionBtnText}>✓ Confirm</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                              style={[styles.swipeActionBtn, { backgroundColor: colors.primary }]} 
+                              onPress={() => setShowMode2Menu(true)}
+                            >
+                              <Text style={styles.swipeActionBtnText}>🔀 Different</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      ) : (
+                        <View style={{ padding: 16 }}>
+                          <Text style={{ color: colors.textMuted, textAlign: 'center' }}>No same-muscle alternatives found.</Text>
+                          <TouchableOpacity 
+                            style={[styles.swipeActionBtn, { backgroundColor: colors.primary, marginTop: 12, alignSelf: 'center' }]} 
+                            onPress={() => setShowMode2Menu(true)}
+                          >
+                            <Text style={styles.swipeActionBtnText}>🔀 Different Exercise</Text>
+                          </TouchableOpacity>
                         </View>
                       )}
                     </View>
-                    
-                    <View style={styles.metricsRow}>
-                      <View style={[styles.metricBox, { backgroundColor: colors.background }]}>
-                        <Text style={[styles.metricLabel, { color: colors.textMuted }]}>Sets</Text>
-                        <Text style={[styles.metricValue, { color: colors.text }]}>{ex.sets}</Text>
-                      </View>
-                      <View style={[styles.metricBox, { backgroundColor: colors.background }]}>
-                        <Text style={[styles.metricLabel, { color: colors.textMuted }]}>Reps</Text>
-                        <Text style={[styles.metricValue, { color: colors.text }]}>{ex.reps}</Text>
-                      </View>
-                      <View style={[styles.metricBox, { backgroundColor: colors.background }]}>
-                        <Text style={[styles.metricLabel, { color: colors.textMuted }]}>Rest</Text>
-                        <Text style={[styles.metricValue, { color: colors.text }]}>{ex.rest}</Text>
-                      </View>
+                  )}
+
+                  {/* Mode 2: Target zone selection menu */}
+                  {isActive && showMode2Menu && (
+                    <View style={[styles.mode2Panel, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
+                      <Text style={[styles.swipeTitle, { color: colors.primary }]}>🔀 Choose target zone</Text>
+                      {isSmartSwapping ? (
+                        <View style={{ padding: 20, alignItems: 'center' }}>
+                          <ActivityIndicator color={colors.primary} />
+                          <Text style={{ color: colors.textMuted, marginTop: 8 }}>AI is finding the best replacement...</Text>
+                        </View>
+                      ) : (
+                        <View style={styles.zoneRow}>
+                          {["Upper", "Lower", "Core"].map(zone => (
+                            <TouchableOpacity
+                              key={zone}
+                              style={[styles.zoneBtn, { borderColor: colors.primary, backgroundColor: colors.background }]}
+                              onPress={() => handleSmartSwap(zone)}
+                            >
+                              <Text style={[styles.zoneBtnText, { color: colors.primary }]}>
+                                {zone === 'Upper' ? '💪' : zone === 'Lower' ? '🦵' : '🏋️'} {zone}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                      {!isSmartSwapping && (
+                        <TouchableOpacity onPress={() => setShowMode2Menu(false)} style={{ marginTop: 8, alignItems: 'center' }}>
+                          <Text style={{ color: colors.textMuted }}>← Back to swipe</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
-
-                    {/* Display the new creative fields! */}
-                    {(ex.method || ex.intensity) && (
-                      <View style={styles.advancedRow}>
-                        {ex.method && <Text style={[styles.tagText, { color: colors.accent }]}>⚡ {ex.method}</Text>}
-                        {ex.intensity && <Text style={[styles.tagText, { color: colors.accent }]}>🔥 {ex.intensity}</Text>}
-                      </View>
-                    )}
-
-                    {ex.notes && <Text style={[styles.notes, { color: colors.textMuted }]}>{ex.notes}</Text>}
-                  </View>
-                </TouchableOpacity>
+                  )}
+                </View>
               );
             })}
           </View>
         )}
-        {/* Bottom spacer so FAB doesn't cover last exercise */}
-        {isEditMode && <View style={{ height: 80 }} />}
       </ScrollView>
-
-      {/* Floating Action Button for Bulk Swap */}
-      {isEditMode && totalSelected > 0 && (
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.accent }]}
-          onPress={handleBulkSwap}
-          disabled={isSwapping}
-          activeOpacity={0.8}
-        >
-          {isSwapping ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.fabText}>Replace {totalSelected} ✦</Text>
-          )}
-        </TouchableOpacity>
-      )}
 
       {/* Restructure Modal */}
       <Modal visible={isModalVisible} animationType="slide" transparent={true}>
@@ -345,38 +459,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    padding: spacing.xl,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: spacing.xs,
-  },
-  modalSub: {
-    fontSize: 14,
-    marginBottom: spacing.lg,
-  },
-  splitList: {
-    gap: spacing.sm,
-  },
-  splitButton: {
-    padding: spacing.lg,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  splitText: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
   header: {
     paddingTop: spacing.xxl,
     paddingHorizontal: spacing.sm,
@@ -396,22 +478,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerBtnDisabled: {
-    opacity: 0.4,
-  },
   headerBtnText: {
     fontSize: 12,
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  editBanner: {
+  hintBanner: {
     paddingVertical: 6,
     paddingHorizontal: spacing.md,
     alignItems: 'center',
   },
-  editBannerText: {
-    fontSize: 13,
-    fontWeight: '600',
+  hintText: {
+    fontSize: 12,
   },
   title: {
     fontSize: 22,
@@ -427,16 +505,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
-  },
-  tabInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  tabDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   tabText: {
     fontWeight: '600',
@@ -454,9 +522,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-  restSubText: {
-    marginTop: spacing.sm,
-  },
   methodBadge: {
     padding: spacing.sm,
     borderRadius: borderRadius.md,
@@ -469,7 +534,7 @@ const styles = StyleSheet.create({
   card: {
     padding: spacing.lg,
     borderRadius: borderRadius.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     borderWidth: 1,
   },
   cardHeader: {
@@ -482,19 +547,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     flex: 1,
-  },
-  checkBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-  },
-  checkText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
   },
   metricsRow: {
     flexDirection: 'row',
@@ -531,21 +583,128 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginTop: spacing.sm,
   },
-  fab: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 30,
-    elevation: 6,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+  // --- Swipe Panel (Mode 1) ---
+  swipePanel: {
+    borderWidth: 1,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+    marginTop: -4,
+    padding: spacing.md,
   },
-  fabText: {
-    color: '#fff',
+  swipeTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  altCard: {
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    minHeight: 70,
+    justifyContent: 'center',
+  },
+  altName: {
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  altEquip: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  altCounter: {
+    fontSize: 11,
+    marginTop: 6,
+  },
+  swipeBtnRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: spacing.sm,
+  },
+  swipeActionBtn: {
+    flex: 1,
+    padding: 10,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+  },
+  swipeActionBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  browseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  arrowBtn: {
+    width: 40,
+    height: 70,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrowText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  // --- Mode 2 Panel ---
+  mode2Panel: {
+    borderWidth: 1,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+    marginTop: -4,
+    padding: spacing.md,
+  },
+  zoneRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  zoneBtn: {
+    flex: 1,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  zoneBtnText: {
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  // --- Modal ---
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    padding: spacing.xl,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: spacing.xs,
+  },
+  modalSub: {
+    fontSize: 14,
+    marginBottom: spacing.lg,
+  },
+  splitList: {
+    gap: spacing.sm,
+  },
+  splitButton: {
+    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  splitText: {
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });

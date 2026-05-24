@@ -22,13 +22,16 @@ class WorkoutPipeline:
             eq.append("Bodyweight")
         return eq
 
-    def filter_exercises(self, target_zones=None, force_types=None, equipment=None, limit=5):
+    def filter_exercises(self, target_zones=None, force_types=None, equipment=None, avoid_names=None, limit=5):
         zones = [z.title() for z in target_zones] if target_zones else []
         forces = [f.title() for f in force_types] if force_types else []
+        avoids = [n.lower() for n in avoid_names] if avoid_names else []
         eq_list = self._normalize_equipment(equipment or self.equipment)
         
         results = []
         for ex in self.all_exercises:
+            if avoids and ex.get("name", "").lower() in avoids:
+                continue
             if zones and ex.get("target_zone") not in zones:
                 continue
             if forces and ex.get("force_type") not in forces:
@@ -40,18 +43,127 @@ class WorkoutPipeline:
                 continue
                 
             results.append(ex)
-            
-        random.shuffle(results)
+        
+        # Sort: Compound first, then Isolation. Shuffle within each group for variety.
+        compounds = [ex for ex in results if ex.get("mechanics") == "Compound"]
+        isolations = [ex for ex in results if ex.get("mechanics") != "Compound"]
+        random.shuffle(compounds)
+        random.shuffle(isolations)
+        results = compounds + isolations
+        
         return results[:limit]
 
+    def find_equipment_alternatives(self, exercise_name, equipment=None):
+        """
+        Mode 1: Find exercises with the SAME muscle_group but DIFFERENT equipment.
+        Returns a list of alternatives (deterministic, no AI).
+        """
+        eq_list = self._normalize_equipment(equipment or self.equipment)
+        
+        # Find the original exercise in the catalog
+        original = None
+        for ex in self.all_exercises:
+            if ex["name"].lower() == exercise_name.lower():
+                original = ex
+                break
+        
+        if not original:
+            return []
+        
+        muscle = original.get("muscle_group", "")
+        target_zone = original.get("target_zone", "")
+        
+        alternatives = []
+        for ex in self.all_exercises:
+            # Same muscle group and target zone
+            if ex.get("muscle_group") != muscle or ex.get("target_zone") != target_zone:
+                continue
+            # Different exercise (not the same one)
+            if ex["name"].lower() == exercise_name.lower():
+                continue
+            # Must have available equipment
+            ex_equip = ex.get("equipment", [])
+            if not all(eq in eq_list for eq in ex_equip):
+                continue
+            
+            alternatives.append(ex)
+        
+        # Sort: Compound first
+        compounds = [ex for ex in alternatives if ex.get("mechanics") == "Compound"]
+        isolations = [ex for ex in alternatives if ex.get("mechanics") != "Compound"]
+        return compounds + isolations
+
+    def find_smart_replacement(self, exercise_name, target_zone_override, day_exercises, user_goals, equipment=None):
+        """
+        Mode 2: AI-powered replacement. Finds the best exercise for a given target_zone
+        considering what muscles are already covered in the day (gap analysis).
+        """
+        eq_list = self._normalize_equipment(equipment or self.equipment)
+        
+        # Get all available exercises in the requested target_zone
+        candidates = []
+        for ex in self.all_exercises:
+            if ex.get("target_zone", "").lower() != target_zone_override.lower():
+                continue
+            if ex["name"].lower() == exercise_name.lower():
+                continue
+            ex_equip = ex.get("equipment", [])
+            if not all(eq in eq_list for eq in ex_equip):
+                continue
+            candidates.append({"name": ex["name"], "muscle_group": ex.get("muscle_group"), "mechanics": ex.get("mechanics")})
+        
+        if not candidates:
+            return None
+        
+        # Use AI to pick the best one
+        prompt = f"""
+        You are an expert fitness coach. The user wants to replace an exercise in their workout day.
+        
+        Current exercise being replaced: "{exercise_name}"
+        Target zone requested: "{target_zone_override}"
+        User goals: {json.dumps(user_goals)}
+        
+        Other exercises ALREADY in this day (avoid muscle overlap):
+        {json.dumps(day_exercises)}
+        
+        Available candidates to choose from:
+        {json.dumps(candidates)}
+        
+        Analyze which muscles are already covered by the existing exercises, identify any GAPS, 
+        and pick the BEST candidate that complements the day.
+        Also assign the sets, reps, rest, method, intensity, and notes.
+        
+        Output ONLY valid JSON:
+        {{
+            "name": "Selected Exercise Name",
+            "reason": "Brief explanation of why this was chosen",
+            "sets": "4",
+            "reps": "8-10",
+            "rest": "90s",
+            "method": "Standard",
+            "intensity": "RPE 7-8",
+            "notes": "..."
+        }}
+        """
+        response = self.client.chat.completions.create(
+            model="gpt-5.4-mini",
+            response_format={"type": "json_object"},
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return json.loads(response.choices[0].message.content)
+
     def generate_plan(self):
-        # Read Rulebook
-        rulebook_path = os.path.join(os.path.dirname(__file__), 'fitness_rules.md')
+        # Read Rulebooks
+        strat_path = os.path.join(os.path.dirname(__file__), 'strategist_rules.md')
+        coach_path = os.path.join(os.path.dirname(__file__), 'coach_rules.md')
         try:
-            with open(rulebook_path, 'r', encoding='utf-8') as f:
-                rules_text = f.read()
+            with open(strat_path, 'r', encoding='utf-8') as f:
+                strat_rules = f.read()
+            with open(coach_path, 'r', encoding='utf-8') as f:
+                coach_rules = f.read()
         except FileNotFoundError:
-            rules_text = "No custom rules found. Use standard fitness knowledge."
+            strat_rules = "No custom rules found. Use standard fitness knowledge."
+            coach_rules = "No custom rules found."
 
         # STEP 1: STRATEGIST
         strategist_prompt = f"""
@@ -59,11 +171,12 @@ class WorkoutPipeline:
         User Profile: {json.dumps(self.user_profile)}
         
         CRITICAL RULEBOOK:
-        {rules_text}
+        {strat_rules}
         
         {f"CRITICAL OVERRIDE: The user has EXPLICITLY requested to change their split to '{self.force_split}'. You MUST build the skeleton using this exact split structure, distributing focus_zones accordingly." if self.force_split else ""}
         
         Based ONLY on the rules above and the user's profile, design the weekly split.
+        
         Output ONLY valid JSON.
         Format:
         {{
@@ -74,18 +187,18 @@ class WorkoutPipeline:
                         "focus_zones": ["Upper", "Lower", "Full Body", "Core"],
                         "focus_forces": ["Push", "Pull", "Squat", "Hinge", "Lunge", "Dynamic", "Static"],
                         "num_exercises": 5,
-                        "method": "e.g., Heavy 5x5 Strength, Hypertrophy Drop Sets, EMOM, Tempo Training"
+                        "method": "Pure Strength | Muscle Growth | Muscle Endurance"
                     }},
                     "Day 2": "Rest"
                 }}
             }}
         }}
         The schedule MUST match the days_per_week in the user profile (e.g. 4 days means 4 Days with exercises, the rest "Rest").
-        Crucially, assign a specific training "method" to each active day based strictly on the User Goals and Equipment. Do not be generic.
+        Assign the correct "method" to each day based on the Goal-to-Method Mapping in the rulebook.
         NAMING RULE: The "plan_name" MUST follow this exact format: "The [Funny Adjective related to user goals] [Random Animal] Program". Examples: "The Super Strong Beaver Program", "The Shredded Flamingo Program", "The Explosive Gorilla Program". Always start with "The" and end with "Program". Be creative and humorous!
         """
         response = self.client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5.4-mini",
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": strategist_prompt}]
         )
@@ -149,11 +262,8 @@ class WorkoutPipeline:
         User Goals: {self.user_profile.get('goals', [])}
         Selected Exercises & Assigned Methods: {json.dumps(selected_schedule)}
         
-        DO NOT default to 3x10. Follow the assigned method precisely! 
-        If method is EMOM, reps should reflect minutes/work.
-        If method is Strength, sets should be high (e.g. 5x5) and intensity high (RPE 8-9).
-        If method is Hypertrophy, consider drop sets or rest-pause (write this in notes/method).
-        If equipment is limited (bodyweight only), use Tempo, Isometric holds, or AMRAP.
+        COACHING RULES:
+        {coach_rules}
         
         Output ONLY valid JSON matching this exact structure:
         {{
@@ -178,7 +288,7 @@ class WorkoutPipeline:
         Ensure every exercise from the input is included. Keep the Day keys exactly as provided.
         """
         response = self.client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5.4-mini",
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": coach_prompt}]
         )
@@ -232,7 +342,7 @@ class WorkoutModifier:
         }}
         """
         response = self.client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5.4-mini",
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}]
         )
@@ -262,7 +372,7 @@ class WorkoutModifier:
         }}
         """
         response = self.client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5.4-mini",
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}]
         )
@@ -416,7 +526,7 @@ class BulkExerciseSwapper:
         }}
         """
         response = self.client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5.4-mini",
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}]
         )
