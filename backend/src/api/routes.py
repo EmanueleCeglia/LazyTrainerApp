@@ -7,6 +7,7 @@ from src.api.schemas import UserProfileRequest, WorkoutPlanResponse
 from src.ai.pipeline import WorkoutPipeline, WorkoutModifier, BulkExerciseSwapper
 from src.database.connection import get_db
 from src.database.models import WorkoutPlan, UserProfile
+from src.api.auth import get_current_user
 from src.api.schemas import ExerciseSwapRequest
 from src.api.schemas import DifficultyModificationRequest
 from src.api.schemas import ProgressionRequest
@@ -51,7 +52,7 @@ def health_check():
     return {"status": "running", "message": "LazyTrainer Brain is Active 🧠"}
 
 @router.post("/generate", response_model=WorkoutPlanResponse)
-def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db)):
+def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db), current_user: UserProfile = Depends(get_current_user)):
     try:
         # --- 2. MERGE EQUIPMENT ---
         base_kit = LOCATION_EQUIPMENT.get(request.location, [])
@@ -59,37 +60,20 @@ def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db))
         
         user_data = request.model_dump()
         user_data['equipment'] = combined_equipment
+        # Override the user_id in the payload with the authenticated user
+        user_data['user_id'] = current_user.username
 
         # --- [NEW] SAVE USER CONTEXT TO DB (The "Memory") ---
-        # We use 'username' to match 'user_id' from the request
-        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
-        
-        if not user_profile:
-            # Create New Profile
-            user_profile = UserProfile(
-                username=request.user_id,
-                location=request.location, # Now storing Location
-                equipment_available=combined_equipment, # Storing the FULL list (Gym + Custom)
-                goals=request.goals,
-                age=request.age,
-                gender=request.gender,
-                weight=request.weight,
-                height=request.height,
-                experience_level=request.experience_level
-            )
-            db.add(user_profile)
-            print(f"Created profile for {request.user_id}")
-        else:
-            # Update Existing Profile
-            user_profile.location = request.location
-            user_profile.equipment_available = combined_equipment
-            user_profile.goals = request.goals
-            user_profile.age = request.age
-            user_profile.gender = request.gender
-            user_profile.weight = request.weight
-            user_profile.height = request.height
-            user_profile.experience_level = request.experience_level
-            print(f"Updated profile for {request.user_id}")
+        # Update Existing Profile
+        current_user.location = request.location
+        current_user.equipment_available = combined_equipment
+        current_user.goals = request.goals
+        current_user.age = request.age
+        current_user.gender = request.gender
+        current_user.weight = request.weight
+        current_user.height = request.height
+        current_user.experience_level = request.experience_level
+        print(f"Updated profile for {current_user.username}")
             
         db.commit() # Save immediately
 
@@ -128,7 +112,7 @@ def generate_workout(request: UserProfileRequest, db: Session = Depends(get_db))
     
 
 @router.put("/plans/{plan_id}/swap")
-def swap_exercise(plan_id: str, request: ExerciseSwapRequest, db: Session = Depends(get_db)):
+def swap_exercise(plan_id: str, request: ExerciseSwapRequest, db: Session = Depends(get_db), current_user: UserProfile = Depends(get_current_user)):
     # 1. Fetch Plan
     plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
     if not plan:
@@ -138,7 +122,7 @@ def swap_exercise(plan_id: str, request: ExerciseSwapRequest, db: Session = Depe
 
     # --- 2. FETCH MEMORY (New Logic) ---
     # We look up the user to see what equipment/location they possess.
-    user_profile = db.query(UserProfile).filter(UserProfile.username == plan.user_id).first()
+    user_profile = current_user
     
     saved_equipment = []
     
@@ -210,7 +194,7 @@ def swap_exercise(plan_id: str, request: ExerciseSwapRequest, db: Session = Depe
     }
 
 @router.put("/plans/{plan_id}/adjust")
-def adjust_difficulty(plan_id: str, request: DifficultyModificationRequest, db: Session = Depends(get_db)):
+def adjust_difficulty(plan_id: str, request: DifficultyModificationRequest, db: Session = Depends(get_db), current_user: UserProfile = Depends(get_current_user)):
     # 1. Fetch Plan
     plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
     if not plan:
@@ -284,15 +268,15 @@ def adjust_difficulty(plan_id: str, request: DifficultyModificationRequest, db: 
     }
 
 @router.post("/generate/next", response_model=WorkoutPlanResponse)
-def generate_next_block(request: ProgressionRequest, db: Session = Depends(get_db)):
+def generate_next_block(request: ProgressionRequest, db: Session = Depends(get_db), current_user: UserProfile = Depends(get_current_user)):
     try:
         # 1. Fetch Previous Plan
         old_plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == request.previous_plan_id).first()
         if not old_plan:
             raise HTTPException(status_code=404, detail="Previous plan not found")
 
-        # 2. Re-construct User Profile from DB (More reliable than re-inferring)
-        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
+        # 2. Use authenticated user
+        user_profile = current_user
         
         if not user_profile:
              raise HTTPException(status_code=404, detail="User Profile not found. Cannot generate progression.")
@@ -346,7 +330,7 @@ def generate_next_block(request: ProgressionRequest, db: Session = Depends(get_d
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/plans/{plan_id}/restructure", response_model=WorkoutPlanResponse)
-def restructure_plan(plan_id: str, request: RestructureRequest, db: Session = Depends(get_db)):
+def restructure_plan(plan_id: str, request: RestructureRequest, db: Session = Depends(get_db), current_user: UserProfile = Depends(get_current_user)):
     try:
         # 1. Fetch Plan
         plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
@@ -354,7 +338,7 @@ def restructure_plan(plan_id: str, request: RestructureRequest, db: Session = De
             raise HTTPException(status_code=404, detail="Plan not found")
             
         # 2. Re-construct User Profile
-        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
+        user_profile = current_user
         if not user_profile:
              raise HTTPException(status_code=404, detail="User Profile not found")
 
@@ -420,7 +404,7 @@ def restructure_plan(plan_id: str, request: RestructureRequest, db: Session = De
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/plans/{plan_id}/bulk-swap")
-def bulk_swap_exercises(plan_id: str, request: BulkSwapRequest, db: Session = Depends(get_db)):
+def bulk_swap_exercises(plan_id: str, request: BulkSwapRequest, db: Session = Depends(get_db), current_user: UserProfile = Depends(get_current_user)):
     try:
         # 1. Fetch Plan
         plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
@@ -428,7 +412,7 @@ def bulk_swap_exercises(plan_id: str, request: BulkSwapRequest, db: Session = De
             raise HTTPException(status_code=404, detail="Plan not found")
         
         # 2. Fetch User Profile
-        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
+        user_profile = current_user
         if not user_profile:
             raise HTTPException(status_code=404, detail="User Profile not found")
         
@@ -507,9 +491,9 @@ def bulk_swap_exercises(plan_id: str, request: BulkSwapRequest, db: Session = De
 
 # --- MODE 1: Equipment Alternatives (Deterministic) ---
 @router.post("/plans/{plan_id}/equipment-alternatives")
-def get_equipment_alternatives(plan_id: str, request: EquipmentAlternativesRequest, db: Session = Depends(get_db)):
+def get_equipment_alternatives(plan_id: str, request: EquipmentAlternativesRequest, db: Session = Depends(get_db), current_user: UserProfile = Depends(get_current_user)):
     try:
-        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
+        user_profile = current_user
         if not user_profile:
             raise HTTPException(status_code=404, detail="User Profile not found")
         
@@ -531,7 +515,7 @@ def get_equipment_alternatives(plan_id: str, request: EquipmentAlternativesReque
 
 # --- MODE 1: Apply Equipment Swap (no AI) ---
 @router.post("/plans/{plan_id}/apply-equipment-swap")
-def apply_equipment_swap(plan_id: str, request: ApplyEquipmentSwapRequest, db: Session = Depends(get_db)):
+def apply_equipment_swap(plan_id: str, request: ApplyEquipmentSwapRequest, db: Session = Depends(get_db), current_user: UserProfile = Depends(get_current_user)):
     """Swap an exercise with the chosen alternative."""
     try:
         plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
@@ -567,13 +551,13 @@ def apply_equipment_swap(plan_id: str, request: ApplyEquipmentSwapRequest, db: S
 
 # --- MODE 2: Smart AI Swap ---
 @router.post("/plans/{plan_id}/smart-swap")
-def smart_swap_exercise(plan_id: str, request: SmartSwapRequest, db: Session = Depends(get_db)):
+def smart_swap_exercise(plan_id: str, request: SmartSwapRequest, db: Session = Depends(get_db), current_user: UserProfile = Depends(get_current_user)):
     try:
         plan = db.query(WorkoutPlan).filter(WorkoutPlan.id == plan_id).first()
         if not plan:
             raise HTTPException(status_code=404, detail="Plan not found")
         
-        user_profile = db.query(UserProfile).filter(UserProfile.username == request.user_id).first()
+        user_profile = current_user
         if not user_profile:
             raise HTTPException(status_code=404, detail="User Profile not found")
         

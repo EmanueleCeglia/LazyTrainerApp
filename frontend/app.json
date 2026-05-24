@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "frontend",
+    "name": "TheLazyTrainer",
     "slug": "frontend",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,6 +16,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.lazytrainer.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -25,6 +26,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f2f1cb95-650d-48ac-befb-260cf5d7740e"
+      }
     }
   }
 }

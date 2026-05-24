@@ -11,6 +11,7 @@ class UserProfile(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True)
+    hashed_password = Column(String)
     age = Column(Integer)
     gender = Column(String)
     weight = Column(Float)

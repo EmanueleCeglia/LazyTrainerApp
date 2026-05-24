@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, StyleSheet, SafeAreaView, View, TouchableOpacity, Text, Platform, StatusBar as RNStatusBar } from 'react-native';
+import { Alert, StyleSheet, SafeAreaView, View, TouchableOpacity, Text, Platform, StatusBar as RNStatusBar, ActivityIndicator } from 'react-native';
 import { QuestionnaireScreen } from './src/screens/QuestionnaireScreen';
 import { WorkoutScreen } from './src/screens/WorkoutScreen';
+import { AuthScreen } from './src/screens/AuthScreen';
 import { generateWorkout } from './src/api/client';
 import { ThemeProvider, useTheme } from './src/styles/ThemeContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 
 function MainApp() {
   const { colors, themeName, toggleTheme } = useTheme();
+  const { token, username, isLoading: isAuthLoading, logout } = useAuth();
+  
   const [planData, setPlanData] = useState<any>(null);
   const [planContext, setPlanContext] = useState<{planId: string, userId: string} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +21,8 @@ function MainApp() {
     try {
       const response = await generateWorkout(payload);
       setPlanData(response.workout_plan);
-      setPlanContext({ planId: response.plan_id, userId: payload.user_id });
+      // We use the authenticated username
+      setPlanContext({ planId: response.plan_id, userId: username || "user" });
     } catch (error: any) {
       Alert.alert("Generation Failed", error.message || "An unexpected error occurred.");
     } finally {
@@ -30,16 +35,35 @@ function MainApp() {
     setPlanContext(null);
   };
 
+  if (isAuthLoading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // If not logged in, show the Auth Screen
+  if (!token) {
+    return <AuthScreen />;
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={themeName === 'dark' ? "light" : "dark"} />
       
-      {/* Theme Toggle Button positioned at top right */}
+      {/* Top Bar with Theme and Logout */}
       <View style={styles.topBar}>
-        <TouchableOpacity style={[styles.themeButton, { borderColor: colors.primary }]} onPress={toggleTheme}>
+        <Text style={{ color: colors.textMuted, flex: 1 }}>Hi, {username}</Text>
+        
+        <TouchableOpacity style={[styles.themeButton, { borderColor: colors.primary, marginRight: 8 }]} onPress={toggleTheme}>
           <Text style={{ color: colors.primary, fontWeight: 'bold' }}>
-            {themeName === 'dark' ? '🌸 Pink Mode' : '🌙 Dark Mode'}
+            {themeName === 'dark' ? '🌸 Pink' : '🌙 Dark'}
           </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={[styles.themeButton, { borderColor: colors.textMuted }]} onPress={logout}>
+          <Text style={{ color: colors.textMuted, fontWeight: 'bold' }}>Log Out</Text>
         </TouchableOpacity>
       </View>
 
@@ -60,9 +84,11 @@ function MainApp() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <MainApp />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <MainApp />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 
@@ -71,10 +97,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   topBar: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) + 10 : 10,
-    paddingBottom: 0,
+    paddingBottom: 10,
   },
   themeButton: {
     borderWidth: 1,
