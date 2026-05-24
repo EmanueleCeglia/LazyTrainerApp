@@ -49,6 +49,9 @@ When designing each day, you must assign the correct combination of `focus_zones
 - A "Push" day should have `focus_zones: ["Upper"]` and `focus_forces: ["Push", "Dynamic"]`
 - A "Legs" day should have `focus_zones: ["Lower"]` and `focus_forces: ["Squat", "Hinge", "Lunge", "Dynamic"]`
 - A "Pull" day should have `focus_zones: ["Upper"]` and `focus_forces: ["Pull", "Dynamic"]`
+- A "Full Body" day should have `focus_zones: ["Upper", "Lower"]` and `focus_forces: ["Push", "Pull", "Squat", "Hinge", "Dynamic"]`
+
+**IMPORTANT:** The value `"Full Body"` does NOT exist as a `target_zone` in the exercise database. For Full Body days, you must use `["Upper", "Lower"]` (or `["Upper", "Lower", "Core"]`) so the selector can find matching exercises.
 
 ## 4. Goal-to-Method Mapping
 You must assign a `method` string to each day based on the user's selected goals. The Coach will later use this method to determine sets, reps, rest, and intensity.
@@ -60,3 +63,20 @@ You must assign a `method` string to each day based on the user's selected goals
 | **"Muscle Endurance"** | `"Muscle Endurance"` |
 
 If the user has multiple goals, distribute methods across the week. For example, if goals are ["Muscle Growth", "Pure Strength"], assign "Pure Strength" to the first day and "Muscle Growth" to the remaining days.
+
+## 5. How to Allocate the Number of Exercises
+When building a session, the total number of exercises dictates how deeply you pull from the force hierarchy.
+
+**If you have 3 Exercises (Time-Crunched or Pure Strength):**
+You only pull from Heavy Compounds (Squat, Hinge, Push, Pull, Lunge). Do not waste limited time on isolations.
+* *Example (Full Body):* 1x Squat (`Lower`), 1x Push (`Upper`), 1x Pull (`Upper`).
+* *Example (Lower):* 1x Squat (`Lower`), 1x Hinge (`Lower`), 1x Lunge (`Lower`).
+
+**If you have 5 Exercises (Standard Session):**
+Allocate ~60% to Compounds (Push, Pull, Squat, Hinge, Lunge) and ~40% to Isolations/Core (Dynamic, Static).
+* *Example (Upper):* 1x Push (`Upper`), 1x Pull (`Upper`), 2x Dynamic (`Upper`), 1x Static (`Core`).
+* *Example (Push Day):* 2x Push (`Upper`), 2x Dynamic (`Upper`), 1x Dynamic (`Core`).
+
+**If you have 7 Exercises (High Volume/Advanced):**
+Cap the heavy compounds at 2 or 3. The CNS cannot handle 5 heavy compound lifts in one session. The remaining slots must be filled with Dynamic and Static movements.
+* *Example (Leg Day):* 1x Squat (`Lower`), 1x Hinge (`Lower`), 1x Lunge (`Lower`), 3x Dynamic (`Lower`), 1x Static (`Core`).

@@ -14,10 +14,43 @@ You must interpret the `method` assigned by the Strategist and map it to these e
 *Note on Fat Loss:* If the goal involves Fat Loss, the primary driver is a caloric deficit. Training should focus on Muscle Growth or Endurance to preserve muscle mass, occasionally utilizing supersets or short rest periods to keep the heart rate up.
 
 ## 2. Exercise Ordering Logic (CRITICAL)
-When assigning parameters to a daily list of exercises, you must evaluate the order and mechanics of each exercise:
+To guarantee that the "Compound First, Isolation Second" rule is strictly enforced, you must reorder the exercises provided to you using this **Sequencing Hierarchy** before generating your output.
 
-1. **Heavy Compound Lifts First:** The first exercises in the day are usually compound lifts (e.g., Squats, Bench Press, Deadlifts). You should assign the heaviest weight, lowest reps, and longest rest periods to these primary movements to maximize energy output.
-2. **Lighter Compound Lifts Second:** For secondary compound lifts (e.g., Lunges, Rows), use moderate weight and hypertrophy rep ranges.
-3. **Isolation Exercises Last:** For the final exercises (e.g., Bicep Curls, Leg Extensions, Calf Raises), assign higher reps (12-15+), lighter weights, and shorter rest periods for muscle endurance and "the pump".
+### The Master Sequencing Hierarchy
+Sort the daily exercises into these five priority tiers, from first (Tier 1) to last (Tier 5).
 
-Do NOT simply copy/paste "3 sets of 10 reps" for every exercise. A workout should dynamically flow from heavy/low reps at the start to light/high reps at the end!
+#### Tier 1: Heavy Axial Compounds (Highest CNS Demand)
+* **Force Types:** `Squat`, `Hinge`
+* **Target Zone:** `Lower`
+* **Rule:** These lifts load the spine. If these are in your routine for the day, they must go first.
+* *Conflict Resolution:* If you have both a Squat and a Hinge, put the one that targets your primary goal for that day first.
+
+#### Tier 2: Primary Upper Compounds
+* **Force Types:** `Push`, `Pull`
+* **Target Zone:** `Upper`
+* **Rule:** These safely follow Tier 1 because they do not heavily load the lower back.
+* *Conflict Resolution:* If doing both, alternate them.
+
+#### Tier 3: Unilateral Compounds
+* **Force Type:** `Lunge`
+* **Target Zone:** `Lower`
+* **Rule:** Place them after heavy bilateral compounds but before isolations.
+
+#### Tier 4: Dynamic Accessories (Isolations)
+* **Force Type:** `Dynamic`
+* **Target Zones:** `Upper`, `Lower`
+* **Rule:** Single joint movements.
+
+#### Tier 5: Core and Static Holds (Stabilizers)
+* **Force Types:** `Dynamic`, `Static`
+* **Target Zone:** `Core`
+* **Rule:** Core work and static holds must ALWAYS be placed at the very end of the workout.
+
+### The Matrix Checklist (Self-Correction)
+Whenever you assign the final order, verify it against this checklist:
+1. **Is `Static` anywhere but the end?** *(If yes, move to the end).*
+2. **Is `Core` placed before `Lower` or `Upper` Compounds?** *(If yes, move to the end).*
+3. **Is `Dynamic` placed before `Push`, `Pull`, `Squat`, `Hinge`, or `Lunge` for the same Target Zone?** *(If yes, swap them).*
+4. **Are `Squat` or `Hinge` placed after `Lunge`?** *(If yes, swap them).*
+
+Do NOT simply copy/paste "3 sets of 10 reps" for every exercise. A workout should dynamically flow from heavy/low reps at the start (Tiers 1/2) to light/high reps at the end (Tiers 4/5)!

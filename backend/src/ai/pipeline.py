@@ -37,9 +37,10 @@ class WorkoutPipeline:
             if forces and ex.get("force_type") not in forces:
                 continue
             
-            ex_equip = ex.get("equipment", [])
+            ex_equip = [eq.lower() for eq in ex.get("equipment", [])]
+            eq_list_lower = [eq.lower() for eq in eq_list]
             # For pure JSON, we want to make sure ALL required equipment is available
-            if not all(eq in eq_list for eq in ex_equip):
+            if not all(eq in eq_list_lower for eq in ex_equip):
                 continue
                 
             results.append(ex)
@@ -67,6 +68,15 @@ class WorkoutPipeline:
                 original = ex
                 break
         
+        # Fallback: substring match if exact match fails (e.g. LLM reworded the name)
+        if not original:
+            for ex in self.all_exercises:
+                if exercise_name.lower() in ex["name"].lower() or ex["name"].lower() in exercise_name.lower():
+                    # For safety, require at least a 4-character overlap to avoid matching "Row" to "Machine Row" randomly
+                    if len(exercise_name) > 4:
+                        original = ex
+                        break
+        
         if not original:
             return []
         
@@ -82,8 +92,9 @@ class WorkoutPipeline:
             if ex["name"].lower() == exercise_name.lower():
                 continue
             # Must have available equipment
-            ex_equip = ex.get("equipment", [])
-            if not all(eq in eq_list for eq in ex_equip):
+            ex_equip = [eq.lower() for eq in ex.get("equipment", [])]
+            eq_list_lower = [eq.lower() for eq in eq_list]
+            if not all(eq in eq_list_lower for eq in ex_equip):
                 continue
             
             alternatives.append(ex)
@@ -173,7 +184,7 @@ class WorkoutPipeline:
         CRITICAL RULEBOOK:
         {strat_rules}
         
-        {f"CRITICAL OVERRIDE: The user has EXPLICITLY requested to change their split to '{self.force_split}'. You MUST build the skeleton using this exact split structure, distributing focus_zones accordingly." if self.force_split else ""}
+        {f"CRITICAL OVERRIDE: The user has EXPLICITLY requested to change their split to '{self.force_split}'. You MUST disregard any potential conflicts in the rulebook (such as the Master Split Matrix constraints based on days or experience level) and strictly fulfill this new split request. Best address this new need while still utilizing the rest of the available user information." if self.force_split else ""}
         
         Based ONLY on the rules above and the user's profile, design the weekly split.
         
@@ -184,7 +195,7 @@ class WorkoutPipeline:
             "schedule": {{
                 "Week 1": {{
                     "Day 1": {{
-                        "focus_zones": ["Upper", "Lower", "Full Body", "Core"],
+                        "focus_zones": ["Upper", "Lower", "Core"],
                         "focus_forces": ["Push", "Pull", "Squat", "Hinge", "Lunge", "Dynamic", "Static"],
                         "num_exercises": 5,
                         "method": "Pure Strength | Muscle Growth | Muscle Endurance"
@@ -262,6 +273,8 @@ class WorkoutPipeline:
         User Goals: {self.user_profile.get('goals', [])}
         Selected Exercises & Assigned Methods: {json.dumps(selected_schedule)}
         
+        IMPORTANT: Each exercise object contains a "mechanics" field ("Compound" or "Isolation") and a "force_type" field. You must strictly REORDER the exercises provided to you using the 5-Tier Master Sequencing Hierarchy found in the coaching rules below. Do not just use the order provided in the input.
+        
         COACHING RULES:
         {coach_rules}
         
@@ -273,11 +286,11 @@ class WorkoutPipeline:
                     "exercises": [
                         {{
                             "name": "Exercise Name",
-                            "sets": "e.g., 5 or 10 min",
-                            "reps": "e.g., 5 or AMRAP",
-                            "rest": "120s",
-                            "method": "e.g., Rest-Pause, Drop Set, Standard",
-                            "intensity": "e.g., RPE 8, To Failure",
+                            "sets": "e.g., 5 or 3",
+                            "reps": "e.g., 5 or 12",
+                            "rest": "e.g., 120s or 60s",
+                            "method": "Pure Strength | Muscle Growth | Muscle Endurance",
+                            "intensity": "e.g., RPE 8-9, RPE 7-8, RPE 6-7",
                             "notes": "..."
                         }}
                     ]
@@ -286,6 +299,7 @@ class WorkoutPipeline:
             }}
         }}
         Ensure every exercise from the input is included. Keep the Day keys exactly as provided.
+        CRITICAL RULE: NEVER alter the `name` of the exercises provided in the input. Keep them exactly as written.
         """
         response = self.client.chat.completions.create(
             model="gpt-5.4-mini",

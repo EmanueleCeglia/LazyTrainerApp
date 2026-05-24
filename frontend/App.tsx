@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) + 10 : 10,
-    paddingBottom: 10,
+    paddingBottom: 0,
   },
   themeButton: {
     borderWidth: 1,

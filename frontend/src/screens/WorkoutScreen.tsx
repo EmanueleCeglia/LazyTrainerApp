@@ -460,13 +460,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: spacing.xxl,
+    paddingTop: 0,
     paddingHorizontal: spacing.sm,
     paddingBottom: spacing.sm,
   },
   headerButtons: {
     flexDirection: 'row',
-    marginTop: spacing.sm,
+    marginTop: 2,
   },
   headerBtn: {
     flex: 1,
