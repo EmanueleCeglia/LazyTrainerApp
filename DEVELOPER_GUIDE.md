@@ -144,10 +144,20 @@ uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 
 ### Frontend (React Native)
 
+The app runs on **Expo SDK 57** (React Native 0.86, React 19.2). Your phone's Expo Go
+must support the same SDK - Expo Go only ever supports the latest one, which is why
+the project was moved off SDK 54.
+
 ```bash
 cd frontend
 npm install    # First time only
 npx expo start
+```
+
+Health-check the toolchain at any time with:
+
+```bash
+npx expo-doctor
 ```
 
 > **Important:** Set your LAN IP in `frontend/.env` (copy `frontend/.env.example`):
@@ -184,8 +194,24 @@ npx expo start
 * **Install from requirements:** `pip install -r requirements.txt`
 
 ### Frontend (Node.js)
-* **Install package:** `npm install package_name`
+* **Install package:** `npx expo install package_name` (picks the SDK-compatible version - prefer this over plain `npm install` for anything Expo-related)
 * **Install all dependencies:** `npm install`
+* **Check for mismatches:** `npx expo install --check`
+
+### Upgrading the Expo SDK
+Expo recommends going **one SDK at a time**. For each step:
+
+```bash
+cd frontend
+npm install expo@^58.0.0     # next version, not a jump
+npx expo install --fix       # realigns every Expo package to that SDK
+npx expo-doctor              # must end at "No issues detected"
+npx tsc --noEmit             # types still compile
+npx expo export --platform android   # the bundle actually builds
+```
+
+Read each version's changelog at `https://expo.dev/changelog/sdk-NN` before starting -
+that is where breaking changes and removed app.json fields are listed.
 
 ---
 

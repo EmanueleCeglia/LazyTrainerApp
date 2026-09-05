@@ -8,8 +8,15 @@ import * as SecureStore from 'expo-secure-store';
 //   EXPO_PUBLIC_API_URL=http://192.168.1.42:8000
 //
 // Without it we fall back to the previous behaviour: LAN IP in dev, tunnel in a build.
+// Metro inlines the variable as a literal and strips whichever branch is dead, so
+// what is in .env at BUNDLE time is what the build talks to.
 const FALLBACK_DEV_URL = 'http://10.107.17.6:8000';
 const FALLBACK_PROD_URL = 'https://lazytrainer-api.loca.lt';
+
+// Since SDK 56 the global fetch is Expo's WinterCG `expo/fetch` rather than React
+// Native's. Every call below sends a plain string body (JSON.stringify, or
+// URLSearchParams.toString() for the login form), which both implementations treat
+// the same. Set EXPO_PUBLIC_USE_RN_FETCH=1 in .env to fall back to RN's fetch.
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL || (__DEV__ ? FALLBACK_DEV_URL : FALLBACK_PROD_URL);

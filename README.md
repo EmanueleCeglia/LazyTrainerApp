@@ -9,7 +9,11 @@ This document contains everything you need to know to setup, develop, test, and 
 Your app is divided into three main components:
 1. **The Database:** PostgreSQL running inside a Docker container.
 2. **The Backend:** A Python FastAPI server. It runs the AI pipeline, generates workouts, handles authentication, and saves data.
-3. **The Frontend:** A React Native app built with Expo. It contains the UI and sends network requests to the Backend.
+3. **The Frontend:** A React Native app built with Expo (**SDK 57** / React Native 0.86 / React 19.2). It contains the UI and sends network requests to the Backend.
+
+> Expo Go only supports the current SDK, so the phone app and this project must stay
+> in step. If Expo Go refuses to open the project, the SDK needs upgrading - see
+> "Upgrading the Expo SDK" in `DEVELOPER_GUIDE.md`.
 
 The API host is read from `EXPO_PUBLIC_API_URL` (see `frontend/.env.example`). If that
 variable is not set, `client.ts` falls back to its built-in defaults:
@@ -51,6 +55,9 @@ Create `frontend/.env` (copy `frontend/.env.example`):
 ```ini
 EXPO_PUBLIC_API_URL=http://YOUR_LAN_IP:8000
 ```
+
+Env vars are inlined when the bundle is built, so **restart `npx expo start`** after
+changing this - a reload will not pick it up.
 
 ### 3. Initialize the Backend
 Open a terminal in `backend/`:
