@@ -1,12 +1,8 @@
-from dotenv import load_dotenv
-load_dotenv()
+from src.config import DATABASE_URL  # noqa: F401  (imports load_dotenv side effect)
 
 from fastapi import FastAPI
 from src.api.routes import router
 from src.api.auth_routes import router as auth_router
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = FastAPI(
     title="LazyTrainer API",

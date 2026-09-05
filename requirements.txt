@@ -120,6 +120,7 @@ pyreadline3==3.5.4
 python-dateutil==2.9.0.post0
 python-docx==1.2.0
 python-dotenv==1.1.1
+python-jose==3.5.0
 python-multipart==0.0.21
 pytube==15.0.0
 pywin32==311

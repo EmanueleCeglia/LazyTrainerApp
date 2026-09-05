@@ -3,6 +3,8 @@ import json
 import random
 from openai import OpenAI
 
+from src.config import OPENAI_MODEL_NAME
+
 class WorkoutPipeline:
     def __init__(self, user_profile=None, equipment=None, force_split=None, exercise_pool=None):
         self.user_profile = user_profile or {}
@@ -118,8 +120,9 @@ class WorkoutPipeline:
                 continue
             if ex["name"].lower() == exercise_name.lower():
                 continue
-            ex_equip = ex.get("equipment", [])
-            if not all(eq in eq_list for eq in ex_equip):
+            ex_equip = [eq.lower() for eq in ex.get("equipment", [])]
+            eq_list_lower = [eq.lower() for eq in eq_list]
+            if not all(eq in eq_list_lower for eq in ex_equip):
                 continue
             candidates.append({"name": ex["name"], "muscle_group": ex.get("muscle_group"), "mechanics": ex.get("mechanics")})
         
@@ -157,7 +160,7 @@ class WorkoutPipeline:
         }}
         """
         response = self.client.chat.completions.create(
-            model="gpt-5.4-mini",
+            model=OPENAI_MODEL_NAME,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}]
         )
@@ -209,7 +212,7 @@ class WorkoutPipeline:
         NAMING RULE: The "plan_name" MUST follow this exact format: "The [Funny Adjective related to user goals] [Random Animal] Program". Examples: "The Super Strong Beaver Program", "The Shredded Flamingo Program", "The Explosive Gorilla Program". Always start with "The" and end with "Program". Be creative and humorous!
         """
         response = self.client.chat.completions.create(
-            model="gpt-5.4-mini",
+            model=OPENAI_MODEL_NAME,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": strategist_prompt}]
         )
@@ -302,7 +305,7 @@ class WorkoutPipeline:
         CRITICAL RULE: NEVER alter the `name` of the exercises provided in the input. Keep them exactly as written.
         """
         response = self.client.chat.completions.create(
-            model="gpt-5.4-mini",
+            model=OPENAI_MODEL_NAME,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": coach_prompt}]
         )
@@ -356,7 +359,7 @@ class WorkoutModifier:
         }}
         """
         response = self.client.chat.completions.create(
-            model="gpt-5.4-mini",
+            model=OPENAI_MODEL_NAME,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}]
         )
@@ -386,7 +389,7 @@ class WorkoutModifier:
         }}
         """
         response = self.client.chat.completions.create(
-            model="gpt-5.4-mini",
+            model=OPENAI_MODEL_NAME,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}]
         )
@@ -540,7 +543,7 @@ class BulkExerciseSwapper:
         }}
         """
         response = self.client.chat.completions.create(
-            model="gpt-5.4-mini",
+            model=OPENAI_MODEL_NAME,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}]
         )

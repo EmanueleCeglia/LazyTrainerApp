@@ -59,8 +59,22 @@ export function QuestionnaireScreen({ onComplete, isLoading }: QuestionnaireScre
       return;
     }
 
+    const numbers = [parseInt(age), parseFloat(weight), parseFloat(height), parseInt(days), parseInt(duration)];
+    if (numbers.some(n => Number.isNaN(n) || n <= 0)) {
+      Alert.alert("Invalid Numbers", "Age, weight, height, days and duration must all be positive numbers.");
+      return;
+    }
+    if (parseInt(days) > 7) {
+      Alert.alert("Too Many Days", "A week only has 7 days - pick between 1 and 7.");
+      return;
+    }
+    if (parseInt(duration) < 15) {
+      Alert.alert("Session Too Short", "Sessions need to be at least 15 minutes.");
+      return;
+    }
+
+    // No user_id here: the backend derives the owner from the JWT.
     const payload = {
-      user_id: "user_" + Math.floor(Math.random() * 10000),
       age: parseInt(age),
       weight: parseFloat(weight),
       height: parseFloat(height),

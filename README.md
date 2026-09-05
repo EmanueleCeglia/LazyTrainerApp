@@ -11,9 +11,13 @@ Your app is divided into three main components:
 2. **The Backend:** A Python FastAPI server. It runs the AI pipeline, generates workouts, handles authentication, and saves data.
 3. **The Frontend:** A React Native app built with Expo. It contains the UI and sends network requests to the Backend.
 
-Our `client.ts` file automatically switches network routes depending on how you start the app:
-- **Development Mode (`__DEV__ = true`):** Connects to your local Wi-Fi IP (`10.107.17.6:8000`).
-- **Production Mode (`__DEV__ = false`):** Connects to the public Localtunnel URL (`https://lazytrainer-api.loca.lt`).
+The API host is read from `EXPO_PUBLIC_API_URL` (see `frontend/.env.example`). If that
+variable is not set, `client.ts` falls back to its built-in defaults:
+- **Development Mode (`__DEV__ = true`):** your local Wi-Fi IP (`10.107.17.6:8000`).
+- **Production Mode (`__DEV__ = false`):** the public Localtunnel URL (`https://lazytrainer-api.loca.lt`).
+
+> Because `.env` is gitignored, EAS Build will not upload it - an APK therefore uses the
+> production fallback above unless you set the variable in the EAS build environment.
 
 ---
 
@@ -33,6 +37,19 @@ DATABASE_URL=postgresql+psycopg2://postgres:password@localhost:5432/postgres
 OPENAI_API_KEY=your-openai-api-key-here
 OPENAI_MODEL_NAME=gpt-5.4-mini
 SECRET_KEY=super-secret-key-for-lazytrainer-replace-in-prod
+
+# Optional
+SQL_ECHO=false                      # set true to log every SQL statement
+ACCESS_TOKEN_EXPIRE_MINUTES=10080   # 7 days
+```
+
+Every one of these is read in `backend/src/config.py`, which is the single place
+settings are loaded. Nothing is hardcoded any more.
+
+### 2b. Point the app at your backend
+Create `frontend/.env` (copy `frontend/.env.example`):
+```ini
+EXPO_PUBLIC_API_URL=http://YOUR_LAN_IP:8000
 ```
 
 ### 3. Initialize the Backend

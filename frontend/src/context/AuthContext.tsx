@@ -1,5 +1,6 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { setOnUnauthorized } from '../api/client';
 
 interface AuthContextData {
   token: string | null;
@@ -46,16 +47,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await SecureStore.deleteItemAsync('userToken');
       await SecureStore.deleteItemAsync('username');
-      setToken(null);
-      setUsername(null);
     } catch (e) {
       console.error("Failed to delete token", e);
+    } finally {
+      // Clear the session even if SecureStore failed, so the user isn't stuck.
+      setToken(null);
+      setUsername(null);
     }
-  };
+  }, []);
+
+  // Tokens last 7 days. When one expires the API client calls this so we drop
+  // straight back to the login screen instead of erroring on every request.
+  useEffect(() => {
+    setOnUnauthorized(() => { logout(); });
+    return () => setOnUnauthorized(null);
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ token, username, isLoading, login, logout }}>

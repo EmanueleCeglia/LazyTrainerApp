@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import jwt, JWTError
 import bcrypt
 from fastapi import Depends, HTTPException, status
@@ -6,25 +6,29 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from src.database.connection import get_db
 from src.database.models import UserProfile
-import os
+from src.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
-# Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key-for-lazytrainer-replace-in-prod")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+def _to_bcrypt_bytes(password: str) -> bytes:
+    # bcrypt refuses anything over 72 bytes. A 72-CHARACTER password can still be
+    # longer than that in UTF-8, so clamp on the encoded length.
+    return password.encode('utf-8')[:72]
 
 def verify_password(plain_password, hashed_password):
-    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    try:
+        return bcrypt.checkpw(_to_bcrypt_bytes(plain_password), hashed_password.encode('utf-8'))
+    except ValueError:
+        # Malformed hash in the DB - treat as a failed login rather than a 500.
+        return False
 
 def get_password_hash(password):
     # bcrypt requires bytes, and we decode the resulting hash back to a string for the DB
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return bcrypt.hashpw(_to_bcrypt_bytes(password), bcrypt.gensalt()).decode('utf-8')
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

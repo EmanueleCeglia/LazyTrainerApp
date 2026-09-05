@@ -1,20 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Alert, StyleSheet, SafeAreaView, View, TouchableOpacity, Text, Platform, StatusBar as RNStatusBar, ActivityIndicator } from 'react-native';
 import { QuestionnaireScreen } from './src/screens/QuestionnaireScreen';
 import { WorkoutScreen } from './src/screens/WorkoutScreen';
 import { AuthScreen } from './src/screens/AuthScreen';
-import { generateWorkout } from './src/api/client';
+import { generateWorkout, listPlans, getPlan } from './src/api/client';
 import { ThemeProvider, useTheme } from './src/styles/ThemeContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 
 function MainApp() {
   const { colors, themeName, toggleTheme } = useTheme();
   const { token, username, isLoading: isAuthLoading, logout } = useAuth();
-  
+
   const [planData, setPlanData] = useState<any>(null);
-  const [planContext, setPlanContext] = useState<{planId: string, userId: string} | null>(null);
+  const [planContext, setPlanContext] = useState<{ planId: string; userId: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  // Plans live in the database, so pull the most recent one back after a login
+  // or an app restart instead of sending the user through the questionnaire again.
+  useEffect(() => {
+    if (!token) {
+      setPlanData(null);
+      setPlanContext(null);
+      return;
+    }
+
+    let cancelled = false;
+    const restoreLatestPlan = async () => {
+      setIsRestoring(true);
+      try {
+        const plans = await listPlans();
+        if (cancelled || plans.length === 0) return;
+        const detail = await getPlan(plans[0].plan_id);
+        if (cancelled) return;
+        setPlanData(detail.workout_plan);
+        setPlanContext({ planId: detail.plan_id, userId: username || 'user' });
+      } catch (e) {
+        // A failed restore is not worth an alert - the questionnaire is a fine fallback.
+        console.warn('Could not restore the last plan:', e);
+      } finally {
+        if (!cancelled) setIsRestoring(false);
+      }
+    };
+    restoreLatestPlan();
+
+    return () => { cancelled = true; };
+  }, [token, username]);
 
   const handleGenerate = async (payload: any) => {
     setIsLoading(true);
@@ -22,18 +54,18 @@ function MainApp() {
       const response = await generateWorkout(payload);
       setPlanData(response.workout_plan);
       // We use the authenticated username
-      setPlanContext({ planId: response.plan_id, userId: username || "user" });
+      setPlanContext({ planId: response.plan_id, userId: username || 'user' });
     } catch (error: any) {
-      Alert.alert("Generation Failed", error.message || "An unexpected error occurred.");
+      Alert.alert('Generation Failed', error.message || 'An unexpected error occurred.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setPlanData(null);
     setPlanContext(null);
-  };
+  }, []);
 
   if (isAuthLoading) {
     return (
@@ -50,30 +82,35 @@ function MainApp() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style={themeName === 'dark' ? "light" : "dark"} />
-      
+      <StatusBar style={themeName === 'dark' ? 'light' : 'dark'} />
+
       {/* Top Bar with Theme and Logout */}
       <View style={styles.topBar}>
         <Text style={{ color: colors.textMuted, flex: 1 }}>Hi, {username}</Text>
-        
+
         <TouchableOpacity style={[styles.themeButton, { borderColor: colors.primary, marginRight: 8 }]} onPress={toggleTheme}>
           <Text style={{ color: colors.primary, fontWeight: 'bold' }}>
             {themeName === 'dark' ? '🌸 Pink' : '🌙 Dark'}
           </Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={[styles.themeButton, { borderColor: colors.textMuted }]} onPress={logout}>
           <Text style={{ color: colors.textMuted, fontWeight: 'bold' }}>Log Out</Text>
         </TouchableOpacity>
       </View>
 
-      {planData && planContext ? (
-        <WorkoutScreen 
-          planData={planData} 
+      {isRestoring ? (
+        <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={{ color: colors.textMuted, marginTop: 12 }}>Loading your plan...</Text>
+        </View>
+      ) : planData && planContext ? (
+        <WorkoutScreen
+          planData={planData}
           planId={planContext.planId}
           userId={planContext.userId}
           onPlanUpdated={(newData) => setPlanData(newData)}
-          onReset={handleReset} 
+          onReset={handleReset}
         />
       ) : (
         <QuestionnaireScreen onComplete={handleGenerate} isLoading={isLoading} />
